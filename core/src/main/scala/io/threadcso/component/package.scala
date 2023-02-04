@@ -258,7 +258,9 @@ package object component {
 
   /** Copy values from `in` to `out` that satisfy `pass`.
     */
-  def filter[T](pass: T => Boolean)(in: channel.??[T], out: channel.!![T]): PROC =
+  def filter[T](
+      pass: T => Boolean
+  )(in: channel.??[T], out: channel.!![T]): PROC =
     π("filter") {
       repeat { val v = in ? (); if (pass(v)) out ! v }
       out.closeOut()
@@ -363,11 +365,12 @@ package object component {
     * most-recently read datum to `out` every `periodNS` nanoseconds.
     */
 
-  def sampler[T](periodNS: Long, in: ??[T], out: !![T]): PROC = proc("sampler") {
-    val ticker = Ticker(periodNS)
-    var datum = in.nothing
-    priserve(ticker =?=> { _ => out ! datum }
-      | in =?=> (d => datum = d))
-    in.closeIn(); out.closeOut(); ticker.closeIn()
-  }
+  def sampler[T](periodNS: Long, in: ??[T], out: !![T]): PROC =
+    proc("sampler") {
+      val ticker = Ticker(periodNS)
+      var datum = in.nothing
+      priserve(ticker =?=> { _ => out ! datum }
+        | in =?=> (d => datum = d))
+      in.closeIn(); out.closeOut(); ticker.closeIn()
+    }
 }

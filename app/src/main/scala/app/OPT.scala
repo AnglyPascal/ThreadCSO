@@ -4,8 +4,7 @@ import scala.reflect.macros.blackbox
 
 /** <p> {{{Bernard Sufrin, Oxford, 2015... $}}}
   *
-  * Type-directed invocation of the low-level 'app.App' functions, using
-  * macros.
+  * Type-directed invocation of the low-level 'app.App' functions, using macros.
   *
   * In the following example our model for processing is that every path is
   * processed in an environment: a pair `(Env, Path)` is called a `Job`.

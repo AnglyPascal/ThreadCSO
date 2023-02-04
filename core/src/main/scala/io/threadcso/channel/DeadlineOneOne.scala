@@ -1,7 +1,8 @@
 package io.threadcso.channel
 
 /** A OneOne-like channel, including a writeBefore operation. */
-class DeadlineOneOne[T](name: String = "") extends SyncChan[T]{
+class DeadlineOneOne[T](name: String = "") extends SyncChan[T] {
+
   /** The current value being sent; valid if full = true. */
   private[this] var buffer: T = _
 
@@ -13,7 +14,7 @@ class DeadlineOneOne[T](name: String = "") extends SyncChan[T]{
   /** Is the channel closed? */
   private[this] var closed = false
 
-  override def close() = synchronized{ closed = true; notifyAll }
+  override def close() = synchronized { closed = true; notifyAll }
 
   override def closeIn(): Unit = close()
 
@@ -21,40 +22,37 @@ class DeadlineOneOne[T](name: String = "") extends SyncChan[T]{
 
   /** Check the channel is open. */
   @inline private[this] def checkOpen =
-    if(closed) throw new Closed(name)
+    if (closed) throw new Closed(name)
 
   // ======== Main operations
 
-  override def !(value: T) = synchronized{
+  override def !(value: T) = synchronized {
     checkOpen; assert(!full)
     buffer = value; full = true; notify() // wake the reader
-    while(full) wait() // wait for the reader
+    while (full) wait() // wait for the reader
   }
 
-  override def ?(): T = synchronized{
+  override def ?(): T = synchronized {
     checkOpen
-    while(!full && !closed) wait() // wait for the writer to fill the buffer
-    if(!full) throw new Closed(name)
+    while (!full && !closed) wait() // wait for the writer to fill the buffer
+    if (!full) throw new Closed(name)
     full = false; notify() // wake the sender
     buffer // Note: we retain the lock so no race condition on buffer
   }
 
-
-  override def writeBefore(nsWait: Long)(value: T): Boolean = synchronized{
+  override def writeBefore(nsWait: Long)(value: T): Boolean = synchronized {
     checkOpen; assert(!full)
     buffer = value; full = true; notify() // wake the reader
-    val deadline = System.nanoTime+nsWait // timeout time
-    while(full && deadline-System.nanoTime > 0){
-      val delay = deadline-System.nanoTime 
+    val deadline = System.nanoTime + nsWait // timeout time
+    while (full && deadline - System.nanoTime > 0) {
+      val delay = deadline - System.nanoTime
       // wait for the reader or for delay ns
-      if(delay > 0)  wait(delay/1000000, (delay%1000000).toInt)
+      if (delay > 0) wait(delay / 1000000, (delay % 1000000).toInt)
     }
-    if(full){ // timeout 
+    if (full) { // timeout
       full = false; false
-    }
-    else true
+    } else true
   }
-
 
   override def ?[U](f: T => U): U = ???
   override def ??[U](f: T => U): U = ???
@@ -70,4 +68,3 @@ class DeadlineOneOne[T](name: String = "") extends SyncChan[T]{
   override def outPortState: io.threadcso.channel.PortState = ???
 
 }
-

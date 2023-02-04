@@ -4,21 +4,16 @@ import io.threadcso.alternation.channel.{InPort, OutPort}
 import io.threadcso.basis.Nanoseconds
 import io.threadcso.channel.PortState
 
-
-/** <p> This package implements the syntax of the CSO alternation notations, and provides
-  *     hooks for the semantics of that notation.
+/** <p> This package implements the syntax of the CSO alternation notations, and
+  * provides hooks for the semantics of that notation.
   *
-  * The body of an '''alternation'''
-  * specification consists of a sequence (possibly empty) of ''executable
-  * event'' specifications separated by `|` and possibly followed
-  * by:
-  * {{{| after(timeout) ==> { ... } }}}
-  * or
-  * {{{| orelse ==> { ... } }}}
-  * or
-  * {{{| after(timeout) ==> { ... } |  orelse ==> { ... } }}}
+  * The body of an '''alternation''' specification consists of a sequence
+  * (possibly empty) of ''executable event'' specifications separated by `|` and
+  * possibly followed by: {{{| after(timeout) ==> { ... }}}} or
+  * {{{| orelse ==> { ... }}}} or
+  * {{{| after(timeout) ==> { ... } |  orelse ==> { ... }}}}
   *
-  *An '''executable event specification''' takes one of the following forms:
+  * An '''executable event specification''' takes one of the following forms:
   * {{{
   * outport              =!=>  OutEvent
   * (guard && outport)   =!=>  OutEvent
@@ -28,10 +23,10 @@ import io.threadcso.channel.PortState
   * (guard && inport)    =??=> InEvent     // extended rendezvous form
   * }}}
   *
-  *Concessions to readability: a `Chan` expression may appear in place of
-  * a port expression.
+  * Concessions to readability: a `Chan` expression may appear in place of a
+  * port expression.
   *
-  * == Events and their effects ==
+  * ==Events and their effects==
   * {{{
   * OutEvent form:                        Effect when triggered
   * {expr}                                outport!expr
@@ -47,27 +42,25 @@ import io.threadcso.channel.PortState
   * {{{
   * { bv => body: Unit }                  { inport??({ bv => body}) }
   * }}}
-  *
   */
-
 
 package object event {
 
   trait Event {
-    /**
-      * Recover the events, deadline, and alternative clauses ready for
+
+    /** Recover the events, deadline, and alternative clauses ready for
       * execution as the body of an alternation.
       */
-      def normalize(): NormalAlt = {
+    def normalize(): NormalAlt = {
       val accum = new scala.collection.mutable.Queue[ExecutableEvent]
 
       def eventsOf(event: Event): Unit = {
         event match {
-          case e: OrElseEvent => eventsOf(e.scope)
-          case e: AfterEvent => eventsOf(e.scope)
+          case e: OrElseEvent         => eventsOf(e.scope)
+          case e: AfterEvent          => eventsOf(e.scope)
           case InfixEventSyntax(l, r) => eventsOf(l); eventsOf(r)
-          case ex: ExecutableEvent => accum enqueue ex
-          case null => {}
+          case ex: ExecutableEvent    => accum enqueue ex
+          case null                   => {}
         }
       }
 
@@ -79,41 +72,39 @@ package object event {
   }
 
   /** Represents the "compiled" body of an alternation */
-  case class NormalAlt(events: collection.Seq[ExecutableEvent], after: AfterEvent, orelse: OrElseEvent)
+  case class NormalAlt(
+      events: collection.Seq[ExecutableEvent],
+      after: AfterEvent,
+      orelse: OrElseEvent
+  )
 
-  private def afterOf(event: Event): AfterEvent
-
-  =
-  {
+  private def afterOf(event: Event): AfterEvent = {
     event match {
-      case e: AfterEvent => e
+      case e: AfterEvent  => e
       case e: OrElseEvent => afterOf(e.scope)
-      case _ => null
+      case _              => null
     }
   }
 
-  private def orElseOf(event: Event): OrElseEvent
-
-  =
-  {
+  private def orElseOf(event: Event): OrElseEvent = {
 
     event match {
       case e: OrElseEvent => e
-      case e: AfterEvent => orElseOf(e.scope)
-      case _ => null
+      case e: AfterEvent  => orElseOf(e.scope)
+      case _              => null
     }
   }
 
   ////////////////////////////////////////
 
-  /**
-    * <p> The meaning of an inport or outport events is represented by a (concrete)
-    * `ExecutableEvent`. Alternation constructs work by choosing an executable event
-    * that is ready for execution, then running it.
+  /** <p> The meaning of an inport or outport events is represented by a
+    * (concrete) `ExecutableEvent`. Alternation constructs work by choosing an
+    * executable event that is ready for execution, then running it.
     */
 
   abstract case class ExecutableEvent() extends ExecutableEventSyntax {
-    /** Is the associated port open  */
+
+    /** Is the associated port open */
     def isOpen: Boolean
 
     /** Is the associated guard true and the associated port open */
@@ -122,15 +113,13 @@ package object event {
     /** Run the event */
     def run(): Unit
 
-    /**
-      * Register the given running alternation with this event's port and return the current state of
-      * the port
+    /** Register the given running alternation with this event's port and return
+      * the current state of the port
       */
     def register(alt: Runnable, theIndex: Int): PortState
 
-    /**
-      * Unregister any running alternation from this event's port and return the current state of
-      * the port.
+    /** Unregister any running alternation from this event's port and return the
+      * current state of the port.
       */
     def unregister: PortState
 
@@ -139,9 +128,8 @@ package object event {
 
   }
 
-  /**
-    * `ExecutableEvent`s are composed ''syntactically'' by infix `|` and
-    * its prefix form.
+  /** `ExecutableEvent`s are composed ''syntactically'' by infix `|` and its
+    * prefix form.
     */
   trait ExecutableEventSyntax extends Event {
     def |(other: ExecutableEventSyntax) = InfixEventSyntax(this, other)
@@ -172,8 +160,7 @@ package object event {
       scope = event; this
     }
 
-    override
-    def toString = "| orelse==>(.)"
+    override def toString = "| orelse==>(.)"
   }
 
   /** An `after` "event" */
@@ -186,34 +173,34 @@ package object event {
 
     def |(other: OrElseEvent): OrElseEvent = other.withScope(this)
 
-    override
-    def toString = "| after(.)==>."
+    override def toString = "| after(.)==>."
   }
 
-  /** Syntactic composition of events `l` and `r`. (These are not __really__ executable, but life's too short
-    * to find a way to make the Scala type system do what amounts to
-    * a complete syntax check.)
+  /** Syntactic composition of events `l` and `r`. (These are not __really__
+    * executable, but life's too short to find a way to make the Scala type
+    * system do what amounts to a complete syntax check.)
     */
-  case class InfixEventSyntax(l: Event, r: Event) extends ExecutableEventSyntax {
-    override
-    def toString: String = "%s | %s".format(l, r)
+  case class InfixEventSyntax(l: Event, r: Event)
+      extends ExecutableEventSyntax {
+    override def toString: String = "%s | %s".format(l, r)
   }
 
-  private[this] def mkInfix(l: ExecutableEventSyntax, r: ExecutableEventSyntax): ExecutableEventSyntax
+  private[this] def mkInfix(
+      l: ExecutableEventSyntax,
+      r: ExecutableEventSyntax
+  ): ExecutableEventSyntax =
+    InfixEventSyntax(l, r)
 
-  =
-  InfixEventSyntax(l, r)
-
-  /** Prefix notation for `|`: `|(e,,1,,, ... e,,n,,)` = `e,,1,, | ... | e,,n,,` */
-  def |(events: collection.Seq[ExecutableEvent]): ExecutableEventSyntax = 
+  /** Prefix notation for `|`: `|(e,,1,,, ... e,,n,,)` = `e,,1,, | ... | e,,n,,`
+    */
+  def |(events: collection.Seq[ExecutableEvent]): ExecutableEventSyntax =
     events.reduce(mkInfix)
- 
 
   //////////// Executable events //////////////
 
   /** Executable event corresponding to `guard && port =?=> body` */
   class InPortEvent[+T](guard: () => Boolean, port: InPort[T], body: T => Unit)
-    extends ExecutableEvent {
+      extends ExecutableEvent {
     def isOpen: Boolean = port.canInput
 
     def isFeasible: Boolean = guard() && isOpen
@@ -236,8 +223,11 @@ package object event {
   }
 
   /** Executable event corresponding to `guard && port =??=> body` */
-  class InPortEventExtended[+T](guard: () => Boolean, port: InPort[T], body: T => Unit)
-    extends ExecutableEvent {
+  class InPortEventExtended[+T](
+      guard: () => Boolean,
+      port: InPort[T],
+      body: T => Unit
+  ) extends ExecutableEvent {
     def isOpen: Boolean = port.canInput
 
     def isFeasible: Boolean = guard() && isOpen
@@ -261,7 +251,7 @@ package object event {
 
   /** Executable event corresponding to `guard && port =!=> body` */
   class OutPortEvent[-T](guard: () => Boolean, port: OutPort[T], gen: () => T)
-    extends ExecutableEvent {
+      extends ExecutableEvent {
     def isOpen: Boolean = port.canOutput
 
     def isFeasible: Boolean = guard() && isOpen
@@ -286,8 +276,12 @@ package object event {
   }
 
   /** Executable event corresponding to `guard && port =!=> body ==> cont` */
-  class OutPortEventThen[-T](guard: () => Boolean, port: OutPort[T], gen: () => T, cont: () => Unit)
-    extends ExecutableEvent {
+  class OutPortEventThen[-T](
+      guard: () => Boolean,
+      port: OutPort[T],
+      gen: () => T,
+      cont: () => Unit
+  ) extends ExecutableEvent {
     def isOpen: Boolean = port.canOutput
 
     def isFeasible: Boolean = guard() && isOpen
@@ -311,11 +305,11 @@ package object event {
 
   /*
   /** This was going to support outport events of the form `=!=> { ... value } ==> { bv => body }` where
-    * the value output to the port is passed as a parameter to the continuation. Unfortunately
-    * I have been unable to construct a `==>`-like operator in `OutPortEvent` with an appropriate type for
-    * the `cont`inuation without sacrificing the contravariance of `OutPort`. It's relatively
-    * straightforward to program around this so I didn't try very hard.
-    */
+   * the value output to the port is passed as a parameter to the continuation. Unfortunately
+   * I have been unable to construct a `==>`-like operator in `OutPortEvent` with an appropriate type for
+   * the `cont`inuation without sacrificing the contravariance of `OutPort`. It's relatively
+   * straightforward to program around this so I didn't try very hard.
+   */
   class OutPortEventThenWithOutput[-T](guard: () => Boolean, port: OutPort[T], gen: ()=>T, cont: T=>Unit)
         extends ExecutableEvent
   { protected [alternation]
@@ -329,5 +323,5 @@ package object event {
 
     override def toString = s"•$port=!=>•==>{_=>•}"
   }
-  */
-  }
+   */
+}
