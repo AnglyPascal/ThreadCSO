@@ -66,12 +66,12 @@ object BarrierTrial {
           log.log(-1, s"$n calculates")
           if (n != 0) {
             u(n) = t(n) + t((n + 1) % N)
-            sleep((math.random * 150).toLong * milliSec)
+            sleep((math.random() * 150).toLong * milliSec)
           }
           if (!(n == 0 && i == stallU)) ub.sync()
           log.log(-1, s"$n updates")
           if (n == 0) {
-            print(s"$i\t"); printt(t); print("\t"); printt(u); println
+            print(s"$i\t"); printt(t); print("\t"); printt(u); println()
             val tt = t; t = u; u = tt
           }
           i += 1

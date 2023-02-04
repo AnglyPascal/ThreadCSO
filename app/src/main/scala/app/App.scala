@@ -1,4 +1,4 @@
-package ox.app
+package app
 
 /** <p> {{{Bernard Sufrin, Oxford, 2015... $}}}
   *
@@ -381,7 +381,7 @@ object App {
   /** Convenience methods that construct new `Opt`ions of the appropriate kinds.
     */
 
-  type App = ox.app.App
+  type App = app.App
 
   def Quote(s: String): String = java.util.regex.Pattern.quote(s)
 

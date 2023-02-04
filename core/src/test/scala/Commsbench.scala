@@ -112,7 +112,7 @@ object Commsbench {
       inject: Int,
       chan: => Chan[Int],
       delta: (??[Int], !![Int], !![Int]) => PROC
-  ) {
+  ): Unit = {
     val a, b, c, d = chan
     (prefix(inject, 0, b, a)
       || delta(a, c, d)
@@ -132,7 +132,7 @@ object Commsbench {
   def seqbuf(loops: Int, inject: Int) =
     experiment(loops, "Seq, Buf", inject, { mkBuf(2 * inject) }, seqdelta)
 
-  def nullprocess(loops: Int, width: Int) {
+  def nullprocess(loops: Int, width: Int): Unit = {
     val count = loops
     val par: PROC = ||(for (i <- 0 until width) yield proc { val v = 0 })
     val ts = time
@@ -163,7 +163,7 @@ object Commsbench {
   -i            turn on threadpool instrumentation
   -d            desperation measure for checking par termination in an -n experiment%n"""
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     var n = 10
     var loops = 10000
     if (args.length == 0)

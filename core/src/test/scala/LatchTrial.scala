@@ -1,5 +1,5 @@
 import io.threadcso._
-import ox.app.OPT.{OPT, _}
+import app.OPT.{OPT, _}
 
 /** Perfunctory test of a Latch
   */
@@ -20,7 +20,7 @@ object LatchTrial extends App {
     OPT("-s", delay, "microseconds delay between decrements")
   )
 
-  def Main: Unit = {
+  def Main(): Unit = {
     if (debug) println(debugger)
     val l = io.threadcso.semaphore.Latch(latch, "Latch")
     val done = CountingSemaphore(name = "Done", available = 0)

@@ -25,7 +25,7 @@ import io.threadcso._
 abstract class AltTrial(implicit loc: SourceLocation) {
 
   /** Read a line from stdin */
-  def readLine: String = scala.io.StdIn.readLine
+  def readLine: String = scala.io.StdIn.readLine()
 
   /** Whether the debugger is to be started (and alternations are to be
     * monitored)
@@ -153,21 +153,21 @@ object AltQuorum extends AltTrial() {
   def S(id: Int) = {
     val reply = OneOne[List[Int]](s"S-$id-reply")
     sa ! Arrive(id, reply)
-    val v = reply ? (); if (!closeOnWrite) reply.closeIn; v
+    val v = reply ? (); if (!closeOnWrite) reply.closeIn(); v
   }
 
   /** Prof arrives */
   def P(id: Int) = {
     val reply = OneOne[List[Int]](s"P-$id-reply")
     pa ! Arrive(id, reply)
-    val v = reply ? (); if (!closeOnWrite) reply.closeIn; v
+    val v = reply ? (); if (!closeOnWrite) reply.closeIn(); v
   }
 
   /** TA arrives */
   def T(id: Int) = {
     val reply = OneOne[List[Int]](s"T-$id-reply")
     ta ! Arrive(id, reply)
-    val v = reply ? (); if (!closeOnWrite) reply.closeIn; v
+    val v = reply ? (); if (!closeOnWrite) reply.closeIn(); v
   }
 
   /** Participant leaves */
@@ -186,7 +186,7 @@ object AltQuorum extends AltTrial() {
 
     def admit(n: Int, queue: Queue[Arrive]): Unit = {
       for (i <- 0 until n) {
-        val Arrive(id, reply) = queue.dequeue
+        val Arrive(id, reply) = queue.dequeue()
         replies += reply
         present += id
       }
@@ -200,14 +200,14 @@ object AltQuorum extends AltTrial() {
           pwaiting.size >= p &&
           twaiting.size >= t
         ) {
-          replies.clear;
+          replies.clear();
           admit(s, swaiting)
           admit(t, twaiting)
           admit(p, pwaiting)
           val quorum = present.toList
           println(s"Class will consist of $quorum")
           for (reply <- replies) {
-            reply ! quorum; if (closeOnWrite) reply.closeOut
+            reply ! quorum; if (closeOnWrite) reply.closeOut()
           }
           started = true
         }
@@ -743,7 +743,7 @@ object AltSyntax extends AltTrial {
 
   val events = (((3 == 4) && a.outPort) =!=> { "foo" }
     | ((3 == 4) && b.inPort) =?=> { s => {} }
-    | c.outPort =!=> { "foo" } ==> { println }
+    | c.outPort =!=> { "foo" } ==> { println() }
     // | d.outPort=!=> {"foo"} ==> { s => println(s) }// this notation withdrawn
     | |(for (ch <- chans) yield (ch.outPort =!=> { "sent" }))
     | e.inPort =?=> { s => () }
@@ -751,7 +751,7 @@ object AltSyntax extends AltTrial {
 
   val events2 = ((3 == 4 && 5 == 6 && a) =!=> { "foo" }
     | (3 == 4 && 5 == 6 && b) =?=> { s => {} }
-    | c =!=> { "foo" } ==> { println }
+    | c =!=> { "foo" } ==> { println() }
     // | d =!=> {"foo"} ==> { s => println(s) }// this notation withdrawn
     | (|(for (ch <- chans) yield (ch =!=> { "sent" })))
     | e =?=> { s => () }

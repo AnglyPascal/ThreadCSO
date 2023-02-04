@@ -1,5 +1,5 @@
 name := "macros"
 version := "1.0"
-scalaVersion := "2.13.6"
+scalaVersion := "2.13.8"
 
 /* libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test" */

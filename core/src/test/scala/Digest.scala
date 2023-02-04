@@ -1,5 +1,5 @@
 import io.threadcso._
-import ox.app.OPT._
+import app.OPT._
 import scala.collection.mutable.TreeMap
 
 /** A program to ''digest'' the texts in a collection of files identified by
@@ -53,7 +53,7 @@ object Digest extends App {
 
   val Command = "Digest"
 
-  def Main: Unit = {
+  def Main(): Unit = {
     val toReaders =
       N2NBuf[Job](size = 200, writers = 1, readers = readers, "toReaders")
     val toDigesters: Seq[Chan[String]] =

@@ -15,7 +15,7 @@ import io.threadcso._
   * }}}
   */
 abstract class APITrial(implicit loc: SourceLocation) {
-  def readLine: String = scala.io.StdIn.readLine
+  def readLine: String = scala.io.StdIn.readLine()
   val shutDown: Thread = new Thread() {
     override def run(): Unit = { Console.println("Shut down") }
   }
@@ -500,12 +500,13 @@ object Deadlock extends APITrial {
   * forwarders closes down.
   */
 object Rendezvous extends APITrial {
-  def fwd(me: String)(in: ??[String], out: !![String]): PROC = proc(s"fwd($me)") {
-    repeat { in ?? (s => out ! s) }
-    println(s"$me finishing")
-    in.closeIn()
-    out.closeOut()
-  }
+  def fwd(me: String)(in: ??[String], out: !![String]): PROC =
+    proc(s"fwd($me)") {
+      repeat { in ?? (s => out ! s) }
+      println(s"$me finishing")
+      in.closeIn()
+      out.closeOut()
+    }
   def MAIN(args: Array[String]): Unit = {
     val left = OneOne[String]("LEFT")
     val right = OneOne[String]("RIGHT")
@@ -565,7 +566,7 @@ object SyncBuf extends APITrial {
         val s = b ? ()
         print(s"$s: ")
         if (s == ".") b.closeIn()
-        if (step) readLine else println
+        if (step) readLine else println()
         ()
       }
     }

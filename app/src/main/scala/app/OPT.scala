@@ -1,10 +1,10 @@
-package ox.app
+package app
 
 import scala.reflect.macros.blackbox
 
 /** <p> {{{Bernard Sufrin, Oxford, 2015... $}}}
   *
-  * Type-directed invocation of the low-level 'ox.app.App' functions, using
+  * Type-directed invocation of the low-level 'app.App' functions, using
   * macros.
   *
   * In the following example our model for processing is that every path is
@@ -64,8 +64,8 @@ import scala.reflect.macros.blackbox
   */
 
 object OPT {
-  type App = ox.app.App
-  type Opt = ox.app.App.Opt
+  type App = app.App
+  type Opt = app.App.Opt
   import scala.language.experimental.macros
   import scala.reflect.macros.blackbox.Context
 
@@ -75,7 +75,7 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Flag($tag, { $flag = ! $flag }, $help)"
+    q"app.App.Flag($tag, { $flag = ! $flag }, $help)"
   }
 
   /** An option that matches 'tag' sets the value of 'flag' to 'value' */
@@ -85,12 +85,12 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, value: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Flag($tag, { $flag = $value }, $help)"
+    q"app.App.Flag($tag, { $flag = $value }, $help)"
   }
 
   /** An option that matches 'tag' invokes the effect */
   def OPT(tag: String, effect: => Unit, help: String): Opt =
-    ox.app.App.Flag(tag, effect, help)
+    app.App.Flag(tag, effect, help)
 
   /** An option that matches 'tag' sets 'flag' to the next argument */
   def OPT(tag: String, flag: String, help: String): Opt = macro StringArg
@@ -98,7 +98,7 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Arg($tag, { case arg => $flag=arg }, $help)"
+    q"app.App.Arg($tag, { case arg => $flag=arg }, $help)"
   }
 
   /** An option that matches 'tag' sets 'flag' to the next argument.'toInt' */
@@ -107,7 +107,7 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Int32($tag, { case arg => $flag=arg }, $help)"
+    q"app.App.Int32($tag, { case arg => $flag=arg }, $help)"
   }
 
   /** An option that matches 'tag' sets 'flag' to the next argument.toLong */
@@ -116,7 +116,7 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Int64($tag, { case arg => $flag=arg }, $help)"
+    q"app.App.Int64($tag, { case arg => $flag=arg }, $help)"
   }
 
   /** An option that matches 'tag' sets 'flag' to the next argument.toDouble */
@@ -125,13 +125,13 @@ object OPT {
       c: blackbox.Context
   )(tag: c.Tree, flag: c.Tree, help: c.Tree): c.universe.Tree = {
     import c.universe._
-    q"ox.app.App.Real($tag, { case arg => $flag=arg }, $help)"
+    q"app.App.Real($tag, { case arg => $flag=arg }, $help)"
   }
 
   /** An option that matches 'tag' invokes 'effect' on the remaining arguments
     */
   def REST(tag: String, effect: List[String] => Unit, help: String): Opt =
-    ox.app.App.Rest(tag, effect, help)
+    app.App.Rest(tag, effect, help)
 
   /** An non-option argument (ie one that doesn't start with "-") invokes
     * 'effect' on the following argument. The 'help1' text is used as a
@@ -139,7 +139,7 @@ object OPT {
     * use '"<path>"' here).
     */
   def ELSE(help1: String, effect: String => Unit, help: String) =
-    new ox.app.App.Lit("[^-].*", effect, List(help, help1))
+    new app.App.Lit("[^-].*", effect, List(help, help1))
 
   /** If tag matches "-[-a-zA-Z0-9]+" an option that matches it invokes 'effect'
     * on the following argument.
@@ -148,8 +148,8 @@ object OPT {
     */
   def OPT(tag: String, effect: String => Unit, help: String): Opt =
     if (tag.matches("-[-a-zA-Z0-9]+"))
-      ox.app.App.Arg(tag, effect, help)
+      app.App.Arg(tag, effect, help)
     else
-      ox.app.App.Lit(tag, effect, help)
+      app.App.Lit(tag, effect, help)
 
 }

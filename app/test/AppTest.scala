@@ -1,4 +1,4 @@
-import ox.app.App._
+import app.App._
 
 import scala.collection.mutable
 

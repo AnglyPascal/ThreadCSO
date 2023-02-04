@@ -3,7 +3,7 @@ import javax.swing.JComponent
 
 import display._
 import io.threadcso._
-import ox.app.OPT._
+import app.OPT._
 
 /** A demonstration of pseudo-gravitational particle calculations done by
   * several workers in lock-step and coordinated by barriers.
@@ -371,7 +371,7 @@ object Particles extends App {
     }
   }
 
-  def Main: Unit = {
+  def Main(): Unit = {
     if (debug) println(debugger)
     N = 2 * P * Seg
     C =

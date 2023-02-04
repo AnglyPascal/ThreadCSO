@@ -1,6 +1,6 @@
 import io.threadcso._
 import io.threadcso.component._
-import ox.app.OPT.{OPT, _}
+import app.OPT.{OPT, _}
 import io.SourcePath._
 
 import scala.language.postfixOps
@@ -79,7 +79,7 @@ abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
   )
 
   def now: Long = System.nanoTime
-  def readLine: String = scala.io.StdIn.readLine
+  def readLine: String = scala.io.StdIn.readLine()
 
   val log = new io.threadcso.debug.Logger("Trace", logsize, trace)
 
@@ -90,7 +90,7 @@ abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
 
   def MAIN: Unit
 
-  def Main: Unit = {
+  def Main(): Unit = {
     if (debug) {
       println(s"Runnable $loc")
       println(debugger)
