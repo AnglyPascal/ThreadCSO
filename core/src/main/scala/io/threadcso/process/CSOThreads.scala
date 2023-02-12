@@ -26,8 +26,8 @@ package io.threadcso.process
   * lower case (default is `K`).
   */
 object CSOThreads {
-  import java.util.concurrent._
 
+  import java.util.concurrent._
   import io.threadcso.basis._
 
   private val mainThread = Thread.currentThread

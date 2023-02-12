@@ -63,7 +63,7 @@ abstract class AltTrial(implicit loc: SourceLocation) {
     */
   def main(args: Array[String]): Unit = {
     var arguments: Seq[String] =
-      for (arg <- args; if (!arg.startsWith("-"))) yield arg
+      for (arg <- args.toIndexedSeq; if (!arg.startsWith("-"))) yield arg
     for (arg <- args)
       if (arg.matches("-d")) useDebugger = true
       else if (arg.matches("-b=[0-9]+")) bufferSize = arg.substring(3).toInt

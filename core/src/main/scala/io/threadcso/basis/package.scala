@@ -6,13 +6,18 @@ package io.threadcso
   * \$Revision: 228 $
   * \$Date: 2016-03-04 16:11:56 +0000 (Fri, 04 Mar 2016)
   * }}}
+  *
+  *   - [[io.threadcso.basis.NameGenerator]] -- Systematic generation of names
+  *     for classes of CSO objects
+  *   - [[io.threadcso.basis.Named]] -- Mixin to name objects during or after
+  *     construction
+  *   - 
   */
 
 package object basis {
 
   /** Systematic generation of names for classes of CSO object.
     */
-
   class NameGenerator(_kind: String) {
     private val occurs = new java.util.concurrent.atomic.AtomicLong
 

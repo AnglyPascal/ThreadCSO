@@ -45,13 +45,13 @@ import io.threadcso.alternation.Run
   *
   * Feb 1 2017: changes 1.1R1 => 1.1R2
   *
-  * \- Removed dependencies on deprecated Java->Scala functions: replaced with
-  * .asJava
-  * {{{
-  * @author Bernard Sufrin, Oxford
-  * \$Revision: 286 $
-  * \$Date: 2017-11-18 17:41:30 +0000 (Sat, 18 Nov 2017) $
-  * }}}
+  *   - Removed dependencies on deprecated Java->Scala functions: replaced with
+  *     .asJava
+  *     {{{
+  *         @author Bernard Sufrin, Oxford
+  *         \$Revision: 286 $
+  *         \$Date: 2017-11-18 17:41:30 +0000 (Sat, 18 Nov 2017) $
+  *     }}}
   */
 package object threadcso {
   import io.SourceLocation.SourceLocation

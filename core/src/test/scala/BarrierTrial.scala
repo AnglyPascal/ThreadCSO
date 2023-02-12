@@ -48,7 +48,11 @@ object BarrierTrial {
       else if (arg.matches("-d")) deb = true
       else {
         println(
-          "Usage: -d start debugger | <int> -- radius of problem | -s -- use a single barrier | -u=<n> -- forget update sync at round <n> | -c=<n> forget compute sync at round <n>"
+          """Usage: -d start debugger   | 
+             <int> -- radius of problem | 
+             -s -- use a single barrier | 
+             -u=<n> -- forget update sync at round <n> | 
+             -c=<n> forget compute sync at round <n>"""
         )
         exit()
       }
@@ -57,7 +61,7 @@ object BarrierTrial {
     val cb = Barrier(N, "Calculate")
     val ub = if (sep) Barrier(N, "Update") else cb
     for (i <- 0 until N) { t(i) = i; u(i) = 0 }
-    def printt(t: Seq[Int]) = { for (i <- 0 until N) print(f"${t(i)}%5s ") }
+    def printt(t: Seq[Int]) = for (i <- 0 until N) print(f"${t(i)}%5s ")
     def agent(n: Int) =
       proc(s"agent($n)") {
         var i = 0
@@ -71,7 +75,8 @@ object BarrierTrial {
           if (!(n == 0 && i == stallU)) ub.sync()
           log.log(-1, s"$n updates")
           if (n == 0) {
-            print(s"$i\t"); printt(t); print("\t"); printt(u); println()
+            print(s"$i\t"); printt(t.toIndexedSeq); print("\t"); printt(u.toIndexedSeq);
+            println()
             val tt = t; t = u; u = tt
           }
           i += 1

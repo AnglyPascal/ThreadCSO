@@ -52,7 +52,7 @@ object PAR extends APITrial {
     par(List(p, p))
     Console.println("------------")
     run(p || p)
-    exit()
+    // System.exit(0)
   }
 }
 
@@ -76,7 +76,7 @@ object PARSyntax extends APITrial {
     par(List(p, p))
     Console.println("------------\n" + (p || p).toString)
     (p || p)()
-    exit()
+    System.exit(0)
   }
 }
 
@@ -103,7 +103,7 @@ object PARStack extends APITrial {
     par(List(p, p))
     Console.println("------------\n" + (p || p).toString)
     (p || p)()
-    exit()
+    System.exit(0)
   }
 }
 
@@ -194,9 +194,10 @@ object Primes extends APITrial {
           var i = 2; repeat { mid ! i; i = i + 1; if (i == max) mid.closeIn() }
         }.withStackSize(aSize))()
     } finally {
-      exit()
+      System.exit(0)
     }
   }
+
   def noMult(n: Int, in: channel.??[Int], out: channel.!![Int]): PROC =
     proc("nomult" + n.toString) {
       repeat {
@@ -238,7 +239,7 @@ object Chan1 extends APITrial {
       else io.threadcso.channel.OneOne[String]("mid")
     run(π { for (a <- args) mid ! a; mid.closeOut() }
       || π { repeat { Console.println(mid ? ()) } })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -262,7 +263,7 @@ object Chan2 extends APITrial {
           Console.println(mid ? ())
         }
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -290,7 +291,7 @@ object Chan3 extends APITrial {
           if (line == ".") mid.closeIn()
         }
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -327,7 +328,7 @@ object Chan4 extends APITrial {
           if (line == ".") mid.closeIn()
         }
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -359,7 +360,7 @@ object Chan5 extends APITrial {
         mid.closeIn()
         println("Stopped listening")
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -421,7 +422,7 @@ object Chan6 extends APITrial {
           if (line == ".") mid.closeIn()
         }
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -472,7 +473,7 @@ object Chan7 extends APITrial {
         }
         mid.close()
       })
-    exit()
+    System.exit(0)
   }
 }
 
@@ -527,7 +528,7 @@ object Rendezvous extends APITrial {
           println("Reader finished")
         }
     )
-    exit()
+    System.exit(0)
   }
 }
 
@@ -573,6 +574,6 @@ object SyncBuf extends APITrial {
     if (args contains "-s") { sender(); receiver() }
     else
       run(sender || receiver)
-    exit()
+    System.exit(0)
   }
 }
