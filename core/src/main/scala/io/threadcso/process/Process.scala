@@ -13,7 +13,6 @@ object Process {
     * component of a running parallel composite process. Usually its value is a
     * procedure that prints a stack backtrace on the console.
     */
-
   val handleThrowable: (String, Throwable) => Unit = {
     case (name: String, t: Throwable) =>
       Console synchronized {
@@ -26,8 +25,7 @@ object Process {
 
   private type Latch = CountDownLatch
 
-  /** Thrown when `stop` is invoked. The stack backtrace is meaningless.
-    */
+  /** Thrown when `stop` is invoked. The stack backtrace is meaningless. */
   val stopped: Stopped = new Stopped()
 
   /** An elementary process */
@@ -49,7 +47,7 @@ object Process {
     __name = "<anonymous>"
   }
 
-  /** Runnable this process does nothing. It is syntactically a (left) unit for
+  /** Running this process does nothing. It is syntactically a (left) unit for
     * `||`
     */
   val SKIP: PROC = new Process.Simple(() => {}) {
@@ -78,6 +76,7 @@ object Process {
 
       for (handle <- peerHandles) { handle.start() } // start the peers
       firstHandle.run() // run in current thread
+
       // change name of current thread to reflect the fact that
       // the first component process has terminated and we are
       // waiting for the others all to terminate
@@ -118,7 +117,6 @@ object Process {
     * `throwables(i)` is the `Throwable` thrown by the running `procs(i)` -- or
     * `null` when it terminated cleanly.
     */
-
   case class ParException(throwables: collection.Seq[Throwable])
       extends Throwable {
     override def toString: String =
@@ -153,8 +151,7 @@ object Process {
       */
     def start(): Unit = executor.execute(this, stackSize)
 
-    /** Wait for the forked process running with this handle to terminate
-      */
+    /** Wait for the forked process running with this handle to terminate */
     def join(): Unit = if (latch != null) latch.await()
 
     override def run(): Unit = {
@@ -185,6 +182,7 @@ object Process {
   private val executor: CSOExecutor = CSOThreads.executor
 
   def exit(): Unit = exit(0)
+
   def exit(code: Int): Unit = { executor.shutdown(); System.exit(code) }
 
 }

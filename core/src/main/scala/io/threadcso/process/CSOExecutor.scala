@@ -4,7 +4,6 @@ package io.threadcso.process
   * allocated to the `Runnable`s that correspond to `CSO` processes in order to
   * run them. It is an abstraction of some sort of execution service.
   */
-
 trait CSOExecutor {
 
   /** Acquire a thread and run the given `Runnable` in it, expressng a

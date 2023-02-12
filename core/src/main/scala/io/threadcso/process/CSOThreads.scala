@@ -51,12 +51,13 @@ object CSOThreads {
     private val threadCount = new java.util.concurrent.atomic.AtomicLong
 
     def newThread(r: Runnable): Thread =
-      new Thread(
-        csoThreads,
-        r,
-        "cso-pool-%d[%d]".format(threadCount.getAndIncrement, stackSize),
-        stackSize
-      )
+      // new Thread(
+      //   csoThreads,
+      //   r,
+      //   "cso-pool-%d[%d]".format(threadCount.getAndIncrement, stackSize),
+      //   stackSize
+      // )
+      Thread.ofVirtual().start(r)
 
   }
 
@@ -116,7 +117,8 @@ object CSOThreads {
     * Default is ADAPTIVE
     */
   val poolKIND: String =
-    getPropElse("io.threadcso.pool.KIND", { s => s })("ADAPTIVE")
+    // getPropElse("io.threadcso.pool.KIND", { s => s })("ADAPTIVE")
+    getPropElse("io.threadcso.pool.KIND", { s => s })("UNPOOLED")
 
   /** Setting a jdk property with `-Dio.threadcso.pool.REPORT=true` causes
     * adaptive pools to report on their activity when `ox.CSO.exit` is called,
@@ -173,12 +175,16 @@ object CSOThreads {
         new CSOExecutor {
           private val threadCount = new java.util.concurrent.atomic.AtomicLong
           def execute(r: Runnable, stackSize: Long): Unit =
-            new Thread(
-              csoThreads,
-              r,
-              "cso-unpooled-%d".format(threadCount.getAndIncrement),
-              stackSize
-            ).start()
+            Thread
+              .ofVirtual()
+              .name("cso-unpooled-%d".format(threadCount.getAndIncrement))
+              .start(r)
+          // new Thread(
+          //   csoThreads,
+          //   r,
+          //   "cso-unpooled-%d".format(threadCount.getAndIncrement),
+          //   stackSize
+          // ).start()
           def shutdown(): Unit = {}
         }
       case _ =>

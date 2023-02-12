@@ -12,5 +12,6 @@ class PooledCSOExecutor(pool: java.util.concurrent.ExecutorService)
   def execute(runnable: java.lang.Runnable, stackSize: Long): Unit = {
     pool.execute(runnable)
   }
+
   def shutdown(): Unit = {}
 }
