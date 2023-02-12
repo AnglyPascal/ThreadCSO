@@ -24,6 +24,10 @@ package io.threadcso.process
   * It is specified by `io.threadcso.pool.stack=`''n'' where ''n'' is a
   * (possibly real) number, possibly followed by `G`, `K`, or `M` in upper or
   * lower case (default is `K`).
+  *
+  * More details about the virtual threads can be found here:
+  *   - [https://openjdk.org/jeps/425]
+  *   - [https://download.java.net/java/early_access/jdk20/docs/api/java.base/java/lang/Thread.html#start()]
   */
 object CSOThreads {
 
@@ -51,14 +55,12 @@ object CSOThreads {
     private val threadCount = new java.util.concurrent.atomic.AtomicLong
 
     def newThread(r: Runnable): Thread =
-      // new Thread(
-      //   csoThreads,
-      //   r,
-      //   "cso-pool-%d[%d]".format(threadCount.getAndIncrement, stackSize),
-      //   stackSize
-      // )
-      Thread.ofVirtual().start(r)
-
+      new Thread(
+        csoThreads,
+        r,
+        "cso-pool-%d[%d]".format(threadCount.getAndIncrement, stackSize),
+        stackSize
+      )
   }
 
   /** Construct a single ADAPTIVE pooled executor to generate threads with
@@ -107,18 +109,20 @@ object CSOThreads {
   val poolMIN: Int = getPropElse("io.threadcso.pool.MIN", _.toInt)(0)
 
   /** Setting a jdk property with `-Dio.threadcso.pool.KIND=`''kind'' what kind
-    * of thread pooling to use: \- ADAPTIVE -- is the default. Retires idle
-    * threads after `poolSECS`. See [[SizePooledCSOExecutor]]. \- SIZED -- runs
-    * several ADAPTIVE pools: each with threads of a similar stack size. See
-    * [[SizePooledCSOExecutor]]. \- CACHED -- a pool that never retires idle
-    * threads. \- UNPOOLED -- makes a new thread every time a `PROC` is run.
-    * Stacksize is as specified by the `PROC`.
+    * of thread pooling to use:
+    *   - `ADAPTIVE` -- is the default. Retires idle threads after `poolSECS`.
+    *     See [[SizePooledCSOExecutor]].
+    *   - `SIZED` -- runs several ADAPTIVE pools: each with threads of a similar
+    *     stack size. See [[SizePooledCSOExecutor]].
+    *   - `CACHED` -- a pool that never retires idle threads.
+    *   - `UNPOOLED` -- makes a new thread every time a `PROC` is run. Stacksize
+    *     is as specified by the `PROC`.
+    *   - `VIRTUAL` -- makes new virtual threads for each `PROC`
     *
-    * Default is ADAPTIVE
+    * Default is VIRTUAL
     */
   val poolKIND: String =
-    // getPropElse("io.threadcso.pool.KIND", { s => s })("ADAPTIVE")
-    getPropElse("io.threadcso.pool.KIND", { s => s })("UNPOOLED")
+    getPropElse("io.threadcso.pool.KIND", { s => s })("VIRTUAL")
 
   /** Setting a jdk property with `-Dio.threadcso.pool.REPORT=true` causes
     * adaptive pools to report on their activity when `ox.CSO.exit` is called,
@@ -175,21 +179,30 @@ object CSOThreads {
         new CSOExecutor {
           private val threadCount = new java.util.concurrent.atomic.AtomicLong
           def execute(r: Runnable, stackSize: Long): Unit =
+            new Thread(
+              csoThreads,
+              r,
+              "cso-unpooled-%d".format(threadCount.getAndIncrement),
+              stackSize
+            ).start()
+          def shutdown(): Unit = {}
+        }
+
+      case "VIRTUAL" =>
+        new CSOExecutor {
+          private val threadCount = new java.util.concurrent.atomic.AtomicLong
+          def execute(r: Runnable, stackSize: Long): Unit =
             Thread
               .ofVirtual()
               .name("cso-unpooled-%d".format(threadCount.getAndIncrement))
               .start(r)
-          // new Thread(
-          //   csoThreads,
-          //   r,
-          //   "cso-unpooled-%d".format(threadCount.getAndIncrement),
-          //   stackSize
-          // ).start()
           def shutdown(): Unit = {}
         }
+
       case _ =>
         throw new IllegalArgumentException(
           "io.threadcso.pool.KIND should be SIZED, ADAPTIVE, CACHED, or UNPOOLED"
         )
     }
+
 }

@@ -178,6 +178,10 @@ object Process {
   }
 
   /** The standard executor used to run the threads in which processes execute.
+    *
+    * We should add optional arguments to specify what kind of threads to use
+    * for this process. My plan is to allow both the compiler flags and optional
+    * arguments
     */
   private val executor: CSOExecutor = CSOThreads.executor
 

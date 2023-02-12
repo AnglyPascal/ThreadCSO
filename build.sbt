@@ -7,6 +7,8 @@ ThisBuild / fork := true
 ThisBuild / javaOptions ++= Seq("--enable-preview") // when running
 ThisBuild / javacOptions ++= Seq("--enable-preview", "--release", "14") // when compiling,
 
+/* ThisBuild / javaOptions ++= Seq("-Dio.threadcso.pool.KIND=ADAPTIVE") */
+
 lazy val scalaReflect = Def.setting {
   "org.scala-lang" % "scala-reflect" % scalaVersion.value
 }

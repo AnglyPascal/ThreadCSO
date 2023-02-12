@@ -98,7 +98,7 @@ package object basis {
     */
   implicit class Identity(thr: Thread) {
     def identity: String =
-      if (thr == null) "?" else s"${thr.getName}#${thr.getId}"
+      if (thr == null) "?" else s"${thr.getName}#${thr.threadId}"
   }
 
   /** Wait until `deadline` for `condition` to become true. If it became true

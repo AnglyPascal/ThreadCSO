@@ -22,9 +22,9 @@ abstract class APITrial(implicit loc: SourceLocation) {
 
   def MAIN(args: Array[String]): Unit
 
-  def main(args: Array[String]): Unit = { // This forces the main cso program into a non-main thread
-    // It's for no particular reason
-    // MAIN(args)
+  // This forces the main cso program into a non-main thread
+  // It's for no particular reason
+  def main(args: Array[String]): Unit = {
     run(proc("Runtime System") {} || proc("MAIN") { MAIN(args) })
   }
 
@@ -176,23 +176,26 @@ object Primes extends APITrial {
     val mid = io.threadcso.channel.OneOne[Int]("mid")
     val res = io.threadcso.channel.OneOne[Int]("res")
     try {
-      (sieve("seive")(mid, res)
-        || proc("output") {
-          var i = 1
-          repeat {
-            System.out.println("%04d %5d".format(i, res ? ()))
-            i = i + 1
-            if (i == count) stop
-            if (pause != 0 && i > pause) {
-              Console.print("<Enter> to continue: "); readLine; ()
+      (
+        sieve("seive")(mid, res)
+          || proc("output") {
+            var i = 1
+            repeat {
+              System.out.println("%04d %5d".format(i, res ? ()))
+              i = i + 1
+              if (i == count) stop
+              if (pause != 0 && i > pause) {
+                Console.print("<Enter> to continue: "); readLine; ()
+              }
             }
-          }
-          Console.println("FINISHED")
-          res.closeOut()
-        }.withStackSize(aSize)
-        || proc("source") {
-          var i = 2; repeat { mid ! i; i = i + 1; if (i == max) mid.closeIn() }
-        }.withStackSize(aSize))()
+            Console.println("FINISHED")
+            res.closeOut()
+          }.withStackSize(aSize)
+          || proc("source") {
+            var i = 2;
+            repeat { mid ! i; i = i + 1; if (i == max) mid.closeIn() }
+          }.withStackSize(aSize)
+      )()
     } finally {
       System.exit(0)
     }

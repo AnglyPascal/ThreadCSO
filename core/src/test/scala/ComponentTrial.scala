@@ -23,7 +23,9 @@ import scala.language.postfixOps
   * -log «n» set trace-log length to  (default 300)
   * }}}
   */
-//noinspection UnitMethodIsParameterless,UnitMethodIsParameterless,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal,VarCouldBeVal
+// noinspection UnitMethodIsParameterless, UnitMethodIsParameterless, VarCouldBeVal, 
+// VarCouldBeVal, VarCouldBeVal, VarCouldBeVal, VarCouldBeVal, VarCouldBeVal, 
+// VarCouldBeVal, VarCouldBeVal, VarCouldBeVal
 abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
     extends App {
   implicit class MkString[T](s: Seq[T]) {
