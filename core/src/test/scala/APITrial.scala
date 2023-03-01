@@ -12,6 +12,7 @@ import io.threadcso._
   * -a=N   -- set stack radius of source and nomult and sink threads
   * -b=N   -- set stack radius of (recursive) sieve threads
   * -p=N   -- pause after N primes (to test the debugger)
+  * -q     -- quietly (don't show the primes)
   * }}}
   */
 abstract class APITrial(implicit loc: SourceLocation) {
@@ -25,7 +26,17 @@ abstract class APITrial(implicit loc: SourceLocation) {
   // This forces the main cso program into a non-main thread
   // It's for no particular reason
   def main(args: Array[String]): Unit = {
-    run(proc("Runtime System") {} || proc("MAIN") { MAIN(args) })
+    val realArgs = args.filter {
+        case arg =>
+         if (arg.startsWith("-K")) {
+           val poolKind = arg.substring(2)
+           println(s"Pool kind: $poolKind") 
+           scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
+           false
+         } else
+           true
+    }
+    run(proc("Runtime System") {} || proc("MAIN") { MAIN(realArgs.toArray) })
   }
 
   java.lang.Runtime.getRuntime.addShutdownHook(shutDown)
@@ -116,6 +127,7 @@ object PARStack extends APITrial {
   * -a=N -- set stack size of source and nomult and sink threads
   * -b=N -- set stack size of (recursive) sieve threads
   * -p=N -- pause after N primes (to test the debugger)
+  * -q   -- quietly
   *
   * Benchmarks from 2017
   * {{{
@@ -126,6 +138,16 @@ object PARStack extends APITrial {
   * Some historical benchmarks:
   * {{{
   * OS              Hardware                     Max Prime Reached
+  * --------------------------------------------------------------------
+  * --------------------------------------------------------------------
+  * Date: Tue Feb 28 18:12:59 GMT 2023 USING LOOM (lightweight threads) JDK20
+  * OS X Monterey
+  * (12.6.3)        Intel Mac Mini (2018)       
+  *                 32gb 3.2Ghz 6-core i7       49999th is 611951
+  *                                             241s (including about 180s for
+  *                                             closing down the pipeline)
+  *                                             10k primes in 11s including closedown
+  *                                             [cf the GO result below]
   * --------------------------------------------------------------------
   * Date: Fri 15 Nov 2013 19:02:24 GMT
   * MAC OS X Lion 4GB Intel Macbook Air    STOPPED AT(~2300th prime 11 minutes)
@@ -156,6 +178,7 @@ object Primes extends APITrial {
     var max = 0
     var count = 0
     var pause = 0
+    var quiet = false
     for (arg <- args)
       if (arg.startsWith("-max="))
         max = arg.substring(5).toInt
@@ -170,8 +193,9 @@ object Primes extends APITrial {
       else if (arg.startsWith("-p="))
         pause = arg.substring(3).toInt
       else if (arg == "-d") println(debugger)
+      else if (arg == "-q") quiet=true
       else
-        Console.println("-max=... -for=... | -a=<N> | -b=<N> | -c | -p=<N>")
+        Console.println(s"($arg) -max=... -for=... | -a=<N> | -b=<N> | -c | -d | -q | -p=<N>")
 
     val mid = io.threadcso.channel.OneOne[Int]("mid")
     val res = io.threadcso.channel.OneOne[Int]("res")
@@ -179,16 +203,20 @@ object Primes extends APITrial {
       (
         sieve("seive")(mid, res)
           || proc("output") {
+            val start = java.lang.System.currentTimeMillis()
             var i = 1
+            var prime = 0
             repeat {
-              System.out.println("%04d %5d".format(i, res ? ()))
+              prime = res ? ()
+              if (!quiet) System.out.println("%04d %5d".format(i, prime))
               i = i + 1
               if (i == count) stop
               if (pause != 0 && i > pause) {
                 Console.print("<Enter> to continue: "); readLine; ()
               }
             }
-            Console.println("FINISHED")
+            val elapsed = java.lang.System.currentTimeMillis() - start
+            Console.println(s"FINISHED: $i: $prime (in $elapsed milliseconds)")
             res.closeOut()
           }.withStackSize(aSize)
           || proc("source") {

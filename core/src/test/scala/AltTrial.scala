@@ -18,6 +18,7 @@ import io.threadcso._
   * -cb (close the b channel before starting -- where appropriate)
   * -ca (close the a channel before starting -- where appropriate)
   * -wr=0 (random range for microSleep: 0 prevents microSleep)
+  * -Kpoolkind (set the thread pool/executor kind)
   * }}}
   * </p>
   */
@@ -43,7 +44,8 @@ abstract class AltTrial(implicit loc: SourceLocation) {
   var closeb, closea = false
   var nargs = 0
   var closeOnWrite = true
-
+  var poolKind = "(default)"
+  
   /* Random range of a- b-waits */
   var wr = 0
 
@@ -65,7 +67,11 @@ abstract class AltTrial(implicit loc: SourceLocation) {
     var arguments: Seq[String] =
       for (arg <- args.toIndexedSeq; if (!arg.startsWith("-"))) yield arg
     for (arg <- args)
-      if (arg.matches("-d")) useDebugger = true
+      if (arg.startsWith("-K")) {
+           poolKind = arg.substring(2)
+           scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
+      }  
+      else if (arg.matches("-d")) useDebugger = true
       else if (arg.matches("-b=[0-9]+")) bufferSize = arg.substring(3).toInt
       else if (arg.matches("-wp=[0-9]+")) wp = arg.substring(4).toLong
       else if (arg.matches("-wa=[0-9]+")) wa = arg.substring(4).toLong
@@ -81,6 +87,7 @@ abstract class AltTrial(implicit loc: SourceLocation) {
         arguments = (for (i <- 0 until nargs) yield s"arg-$i") ++ arguments
       } else if (arg.startsWith("-")) {
         println(s"""Arguments must match one (or more) of:
+            -Kpoolkind (set the default executor)
             -d (debugger)
             -b=$bufferSize (buffer radius)
             -a=$nargs (count of arguments to synthesise)
@@ -97,7 +104,7 @@ abstract class AltTrial(implicit loc: SourceLocation) {
       }
 
     if (useDebugger) println(debugger)
-    println(s"-b=$bufferSize -mn=$mn -wp=$wp -wa=$wa -wb=$wb -ws=$ws -wr=$wr")
+    println(s"-K$poolKind -b=$bufferSize -mn=$mn -wp=$wp -wa=$wa -wb=$wb -ws=$ws -wr=$wr")
     // println(s"arguments: $arguments")
     MAIN(arguments)
     terminate()

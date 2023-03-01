@@ -35,7 +35,7 @@ object Process {
       * return a handle on the running thread.
       */
     def fork: Handle = {
-      val handle = new Handle(name, body, new CountDownLatch(1))
+      val handle = new Handle(name, body, new CountDownLatch(1), stackSize, executor)
       handle.start()
       handle
     }
@@ -67,11 +67,11 @@ object Process {
       val latch = new CountDownLatch(procs.size - 1)
       val peerHandles =
         for (proc <- procs.tail)
-          yield new Handle(proc.name, proc, latch, proc.stackSize)
+          yield new Handle(proc.name, proc, latch, proc.stackSize, proc.executor)
 
       val firstHandle = {
         val proc = procs.head
-        new Handle(proc.name, proc, null, proc.stackSize)
+        new Handle(proc.name, proc, null, proc.stackSize, proc.executor)
       }
 
       for (handle <- peerHandles) { handle.start() } // start the peers
@@ -105,7 +105,7 @@ object Process {
     }
 
     def fork: Handle = {
-      val handle = new Handle(name, apply _, new CountDownLatch(1))
+      val handle = new Handle(name, apply _, new CountDownLatch(1), stackSize, executor)
       handle.start()
       handle
     }
@@ -128,8 +128,13 @@ object Process {
       name: String,
       body: ProcessBody,
       latch: Latch = null,
-      stackSize: Long = 0L
+      stackSize: Long = 0L,
+      procExecutor: CSOExecutor = null
   ) extends java.lang.Runnable {
+
+    /** The executor that will be used to run the body */
+    val executor: CSOExecutor =
+        if (procExecutor == null) CSOThreads.executor() else procExecutor
 
     /** The throwable, if any, thrown by a terminating process. */
     var thrown: Throwable = _
@@ -177,16 +182,9 @@ object Process {
     }
   }
 
-  /** The standard executor used to run the threads in which processes execute.
-    *
-    * We should add optional arguments to specify what kind of threads to use
-    * for this process. My plan is to allow both the compiler flags and optional
-    * arguments
-    */
-  private val executor: CSOExecutor = CSOThreads.executor
-
+  
   def exit(): Unit = exit(0)
 
-  def exit(code: Int): Unit = { executor.shutdown(); System.exit(code) }
+  def exit(code: Int): Unit = { CSOThreads.shutDown(); System.exit(code) }
 
 }

@@ -108,21 +108,6 @@ object CSOThreads {
     */
   val poolMIN: Int = getPropElse("io.threadcso.pool.MIN", _.toInt)(0)
 
-  /** Setting a jdk property with `-Dio.threadcso.pool.KIND=`''kind'' what kind
-    * of thread pooling to use:
-    *   - `ADAPTIVE` -- is the default. Retires idle threads after `poolSECS`.
-    *     See [[SizePooledCSOExecutor]].
-    *   - `SIZED` -- runs several ADAPTIVE pools: each with threads of a similar
-    *     stack size. See [[SizePooledCSOExecutor]].
-    *   - `CACHED` -- a pool that never retires idle threads.
-    *   - `UNPOOLED` -- makes a new thread every time a `PROC` is run. Stacksize
-    *     is as specified by the `PROC`.
-    *   - `VIRTUAL` -- makes new virtual threads for each `PROC`
-    *
-    * Default is VIRTUAL
-    */
-  val poolKIND: String =
-    getPropElse("io.threadcso.pool.KIND", { s => s })("VIRTUAL")
 
   /** Setting a jdk property with `-Dio.threadcso.pool.REPORT=true` causes
     * adaptive pools to report on their activity when `ox.CSO.exit` is called,
@@ -159,10 +144,52 @@ object CSOThreads {
     }
   }
 
-  /** The `CSOExecutor` that is being used in this program. Its kind is fixed by
-    * `poolKind`.
+   /**
+    *  The varieties of CSOExecutor  
+    *
     */
-  val executor: CSOExecutor =
+
+   lazy val SIZED:    CSOExecutor = makeExecutor("SIZED")
+   lazy val ADAPTIVE: CSOExecutor = makeExecutor("ADAPTIVE")
+   lazy val CACHED:   CSOExecutor = makeExecutor("CACHED")
+   lazy val UNPOOLED: CSOExecutor = makeExecutor("UNPOOLED")
+   lazy val VIRTUAL:  CSOExecutor = makeExecutor("VIRTUAL")
+
+  /**
+    * Setting a jdk property with `-Dio.threadcso.pool.KIND=`''kind'' determines what kind
+    * of thread pooling to use by default:
+    *   - `ADAPTIVE` -- Retires idle threads after `poolSECS`.
+    *     See [[SizePooledCSOExecutor]].
+    *   - `SIZED` -- runs several ADAPTIVE pools: each with threads of a similar
+    *     stack size. See [[SizePooledCSOExecutor]].
+    *   - `CACHED` -- a pool that never retires idle threads.
+    *   - `UNPOOLED` -- makes a new thread every time a `PROC` is run. Stacksize
+    *     is as specified by the `PROC`.
+    *   - `VIRTUAL` -- makes new virtual threads for each `PROC`
+    *
+    *   Default is VIRTUAL
+    */
+    
+  def poolKIND: String =
+    getPropElse("io.threadcso.pool.KIND", { s => s })("VIRTUAL")
+
+  /**  The current default `CSOExecutor` used in this program.
+    *  Its kind is determined by `poolKIND`.
+    */
+   def executor(): CSOExecutor = {
+     getExecutor(poolKIND)
+   }
+
+   def getExecutor(poolKind: String): CSOExecutor =
+   poolKind.toUpperCase match {
+      case "SIZED"      => SIZED
+      case "ADAPTIVE"   => ADAPTIVE
+      case "CACHED"     => CACHED
+      case "UNPOOLED"   => UNPOOLED
+      case "VIRTUAL"    => VIRTUAL
+   }
+
+   private def makeExecutor(poolKind: String): CSOExecutor =
     poolKIND.toUpperCase match {
       case "SIZED" =>
         new SizePooledCSOExecutor(sizePooledCSOExecutor, poolREPORT)
@@ -194,15 +221,24 @@ object CSOThreads {
           def execute(r: Runnable, stackSize: Long): Unit =
             Thread
               .ofVirtual()
-              .name("cso-unpooled-%d".format(threadCount.getAndIncrement))
+              .name("cso-virtual-%d".format(threadCount.getAndIncrement))
               .start(r)
           def shutdown(): Unit = {}
         }
 
       case _ =>
         throw new IllegalArgumentException(
-          "io.threadcso.pool.KIND should be SIZED, ADAPTIVE, CACHED, or UNPOOLED"
+          s"io.threadcso.pool.KIND ($poolKIND) should be SIZED, ADAPTIVE, CACHED, VIRTUAL, or UNPOOLED"
         )
+    }
+
+    /**
+     *  Shut all executors down. 
+     *  TODO: This could be somewhat more efficient. (Only shut down the used executors)
+     *        It's only used to debrief the pooled executors.
+     */
+    def shutDown(): Unit =
+    { for { ex <- List(SIZED,ADAPTIVE,CACHED,UNPOOLED,VIRTUAL) } ex.shutdown()
     }
 
 }
