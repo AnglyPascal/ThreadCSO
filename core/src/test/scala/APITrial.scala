@@ -13,6 +13,7 @@ import io.threadcso._
   * -b=N   -- set stack radius of (recursive) sieve threads
   * -p=N   -- pause after N primes (to test the debugger)
   * -q     -- quietly (don't show the primes)
+  * -Kpoolkind -- set the default source of threads (VIRTUAL)
   * }}}
   */
 abstract class APITrial(implicit loc: SourceLocation) {
@@ -132,7 +133,8 @@ object PARStack extends APITrial {
   * Benchmarks from 2017
   * {{{
   * Wed  4 Oct 2017 13:07:06 BS
-  * OS X (Sierra) 2.9ghz Intel Core I7 (8G DDR3 1600mhz) 17657 (2028th prime) 36secs (cause: OS hard limit on kthreads)
+  * OS X (Sierra) 2.9ghz Intel Core I7 (8G DDR3 1600mhz) 17657 (2028th prime) 36secs
+         (cause: OS hard limit on kthreads)
   * }}}
   *
   * Some historical benchmarks:
@@ -144,10 +146,9 @@ object PARStack extends APITrial {
   * OS X Monterey
   * (12.6.3)        Intel Mac Mini (2018)       
   *                 32gb 3.2Ghz 6-core i7       49999th is 611951
-  *                                             241s (including about 180s for
-  *                                             closing down the pipeline)
-  *                                             10k primes in 11s including closedown
-  *                                             [cf the GO result below]
+  *                                             50k primes in 126s -- 240s inc pipeline closedown
+  *                                             9999th is 104723
+  *                                             10k primes in 4.8s -- 11s inc pipeline closedown
   * --------------------------------------------------------------------
   * Date: Fri 15 Nov 2013 19:02:24 GMT
   * MAC OS X Lion 4GB Intel Macbook Air    STOPPED AT(~2300th prime 11 minutes)
@@ -155,7 +156,7 @@ object PARStack extends APITrial {
   * [Same program in GO on the above machine]
   * STILL GOING (9591 primes in 16.8s)
   * Fedora machines now seem to impose a limit that results in termination
-  * fter generating only 1002 primes.
+  * after generating only 1002 primes.
   * --------------------------------------------------------------------
   * Date: 2008-09-17 17:22:11 +0100 (Wed, 17 Sep 2008) java 1.5
   * MAC OS X (Tiger)1GB PPC Mac Mini             22811   (2549th prime)

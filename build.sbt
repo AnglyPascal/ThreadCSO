@@ -2,7 +2,7 @@ ThisBuild / organization := "ox"
 Global / resolvers += "scala-integration" at
   "https://scala-ci.typesafe.com/artifactory/scala-integration/"
 ThisBuild / scalaVersion := "2.13.11-bin-114c1da"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.1.1-SNAPSHOT"
 ThisBuild / fork := true
 ThisBuild / javaOptions ++= Seq("--enable-preview") // when running
 ThisBuild / javacOptions ++= Seq("--enable-preview", "--release", "14") // when compiling,
@@ -35,4 +35,18 @@ lazy val macroSub = (project in file("macros"))
 lazy val app = (project in file("app"))
   .settings(
     libraryDependencies += scalaReflect.value
+  )
+  
+lazy val examples = (project in file("examples"))
+  .dependsOn(core)
+  .dependsOn(app)
+  .settings(
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-unchecked"
+      /* "-Werror" */
+    ),
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
   )

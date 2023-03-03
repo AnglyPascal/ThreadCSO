@@ -1,0 +1,40 @@
+#!/bin/zsh
+# Run a cso app from the command line
+# OR
+# print environment variable settings for doing so
+#
+# cso program args  OR  source cso
+#
+unset CSOPATH
+unset JAVA_HOME
+unset JAVA_OPTS
+#
+#
+#
+CSO=/Users/sufrin/GitHomes/LoomCSO
+JAVA_OPTS="-Xmx256M -Xms32M --enable-preview"
+JAVA_HOME=/Users/sufrin/Downloads/jdk-20.jdk/Contents/Home
+#
+# Collect the class path jars
+#
+for jar in $(find $CSO -name "*.jar" | grep -v sbt)
+do
+  CSOPATH=$jar:$CSOPATH
+done
+
+case $0 in
+  *csoc)   PROGRAM=scalac;;
+  *cso)    PROGRAM=scala;;
+  *)       PROGRAM=echo;;
+esac
+
+export CSOPATH
+export JAVA_HOME
+export JAVA_OPTS
+
+if [ $# -ne 0 ]
+then
+   $PROGRAM -cp $CSOPATH "$@"
+else
+   printenv | egrep "(CSOPATH|JAVA_HOME|JAVA_OPTS)"
+fi
