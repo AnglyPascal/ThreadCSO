@@ -1,15 +1,39 @@
 # Some CSO examples
 
-## Dining Philosophers
+*The code provided here is compatible with Scala 2.13.  It will
+compile with the most recently-published variant of the threadcso
+library jar, and will run without change using **jdk 20**. Compiled
+code will also run -- using Kernel threads rather than Virtual threads
+by default -- using earlier versions of jdk.*
+
+*Explanations of some of the principles behind the examples, and
+of **threadcso** itself, can be found in the accompanying [lecture
+notes](https://github.com/sufrin/ThreadCSO/Lectures).*
+
+
+Bernard Sufrin, Oxford. 2011, 2017, 2023
+
+## Solutions to Practicals
+
+In this section we have collected solutions to practical problems
+set as part of the Concurrent & Distributed Programming course at
+the University of Oxford that was delivered either by Bernard Sufrin
+or by Gavin Lowe between the years 2004 and 2022. 
+
+The course content variedPracticals were accompanied
+by briefings and take up aspects of the course materials
+from the year they were first set.
+
+
+### Dining Philosophers
 
 Except for `Phils.scala`, the `.scala` programs are his solutions
-to a practical set often by Bernard Sufrin at Oxford (2007-20017).
-`Phils.scala` is a deadlocking non-solution that illustrates the
-problem. It is very easy to change the number of Philosphers
-(in the source text).
+to a practical set often by Bernard Sufrin.  `Phils.scala` is a
+deadlocking non-solution that illustrates the problem. It is very
+easy to change the number of Philosphers (in the source text).
 
 
-### The Complete Practical Briefing
+#### The Complete Practical Briefing
 
 It is recommended that you read the material from the section of
 the course notes on the Dining Philosophers before you attempt this
@@ -77,16 +101,122 @@ Your report should be in the form of a well-commented program, together
 with a brief discussion of any design considerations and of your
 results.
 
-## Particles
-
-Simple example of a hybrid concurrent implementation using 
-[ThreadCSO](https://github.com/sufrin/ThreadCSO)
-barriers, semaphores, and channels.
 
 
-A demonstration of pseudo-gravitational particle calculations done by several workers
-in lock-step, coordinated by barriers, with (many) parameters of the simulation
-settable from the GUI.  
+### Life (Conway's Game of Life)
+
+The aim of this practical is to implement the Game of Life, a cellular
+automaton invented by John Conway in 1970. The Wikipedia entry on Life
+
+        http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+
+describes it as follows:
+
+“The universe of the Game of Life is an infinite two-dimensional
+orthogonal grid of square cells, each of which is in one of two
+possible states, live or dead. Every cell interacts with its eight
+neighbours, which are the cells that are directly horizontally,
+vertically, or diagonally adjacent. At each step in time the
+following transitions occur:
+
+   1.  Any live cell with fewer than two live neighbours dies, as if by
+   needs caused by underpopulation.
+   
+   2.  Any live cell with more than three live neighbours dies, as if by
+   overcrowding.
+   
+   3.  Any live cell with two or three live neighbours lives, unchanged,
+   to the next generation.
+   
+   4.  Any tile with exactly three live neighbours cells will be
+   populated with a living cell.
+
+The initial pattern constitutes the ‘seed’ of the system. The first
+generation is created by applying the above rules simultaneously to
+every cell in the seed: births and deaths happen simultaneously,
+and the discrete moment at which this happens is sometimes called a
+tick. In other words, each generation is a pure function of the one
+before. The rules continue to be applied repeatedly to create further
+generations.”
+
+You might want to read the rest of the Wikipedia article.
+
+We will consider a variant with a finite $N$ by $N$ grid, treated as a
+toroid, i.e. where the top and bottom edges of the grid are treated as
+being adjacent, as are the left and right edges.
+
+#### Your task 
+
+Your task is to implement the Game of Life. Your program should use
+$p$ processes to update the cells on each generation. You will
+probably want to allocate some region of the grid to each process.
+
+There are two essentially different ways to structure the program:
+
+   1. as a shared-variable synchronous data parallel program
+
+   2. as a pure message-passing program with cells represented by individual processes
+
+In both cases the processes need to be synchronised in some way,
+so that the rules of the game are followed, so you need to think
+carefully about how to avoid race conditions. 
+
+There is a file `Display.scala` (on the course website), which defines a
+`Display` class that can be used to build displays that show the state
+of a grid. A display is created by
+
+        val display = new Display(N, a)
+
+where is an integer, representing the size of the grid, and is the grid,
+represented by an by array of , e.g. initialised by
+
+        val a = Array.ofDim[Boolean](N,N)
+
+The display is made consistent with by executing
+
+        display.draw
+
+This shows solid black squares at positions where $a$ is true, and grey
+squares where it is false.
+
+Test your implementation by considering some interesting seeds (see the
+Wikipedia page to get some ideas).
+
+#### Optional
+
+Implement one or more of the variants from the Wikipedia page: you
+might have to adapt `Display` to do so. Alternatively, devise a
+more complicated game that can be modelled using cellular automata. For
+example, you could model the interactions between foxes and rabbits.
+Don't make the rules too complicated, though! You could include some
+randomness in the game.
+
+#### Advice (2023)
+
+Experience suggests suggests that when using kernel threads,
+allocating a process to each square in the grid means that only a
+small grid can be dealt with before the operating system or the jvm
+begins to run out of thread resources. Using virtual threads (as
+provided by recent versions of threadcso) would be a better bet for
+a serious attempt (and we will present one due to Jones and Goldsmith
+(Programming in **occam2**) in due course). Other message-passing
+solutions will have workers working on larger rectangular regions
+of the grid, and exchanging the edges of their regions with neighbour
+workers on every generation.
+
+
+## Additional Examples
+
+### Particles
+
+
+A demonstration of pseudo-gravitational particle calculations done
+by several workers in lock-step, coordinated by barriers, with
+(many) parameters of the simulation settable from the GUI.  A
+description of the technique used for particle computations is given
+in the Particle Computations section of the lecture notes on
+[Synchronous Data Parallel Programming](https://github.com/sufrin/ThreadCSO/blob/main/Lectures/03-dataparallel.pdf).
+
   
   1. The particles move in a closed container with energy absorbent
   walls. 
@@ -95,17 +225,22 @@ settable from the GUI.
 
   1. Clicking on a particle increases its density by an order of
   magnitude (and changes its hue "redward". The mass of a particle
-  is calculated in the usual way from its radius, viz:
+  is calculated in the usual way from its radius, *viz*:
   density×(4/3)πR&#x00B3;
   
   1. Control-clicking on a particle  decreases its density by an order of magnitude.
   
-  1. One or more particles can be selected (or deselected) by Command-cllicking. Selected
-  particles can be nudged, when the simulation is not running, by using the direction keys
-  on the keyboard. 
-  
+  1. One or more particles can be selected (or deselected) by Shift-clicking.
+
+  1. When the simulation is not running, selected particles can be
+     nudged, by using the direction keys on the keyboard. Their radius
+     can be decreased by pressing `1`, or  increased by pressing `2`.
+     Radii of *all* particles is decreased (increased) by pressing
+     control-`1` (control-`2`).
+
+
   1. Coefficients of restitution of walls and particles can be set
-  interactively or as the application begins.
+     interactively or as the application begins.
 
   1. δt is the simulated elapsed time between computed frames
 
@@ -116,12 +251,8 @@ settable from the GUI.
 
   1. The number of particles is the product of P (the number of
   worker processes), and 2×S (the number of particles managed per
-  worker process).
-
-Make the jar file from the shell with `make` (make sure you have
-set up the `make.properties` file properly with the class path of
-the threadcso library, etc.)
-
+  worker process). 
+ 
 Usage (from sbt) is
 
 `package examples; runMain Particles` [*args*], where each *arg* is one of
@@ -148,22 +279,35 @@ Usage (from sbt) is
 
    -d enable the debugger (false)
 
-   `--` Remaining parameters are particle specs of the form `<radius>@<x>,<y>`. If none are given, then 2×P×S are made at random.
+   `--` the remaining parameters are taken to be particle specifications of the form `<radius>@<x>,<y>`.
 
-For example:
+A total of 2×P×S particles participates in the simulation. The
+initial positions of the non-specified particles are chosen randomly.
+Their initial radii are intended to give a decent range that depends
+on the numbers of particles and the width of the display.
 
+
+Default example
+
+        runMain Particles                          # 4 workers 8 particles
+
+This is the one to play with first. Try making one of the particles very dense; then try setting
+`Repel`, and/or setting the wall's momentum multiplier to a fraction > 1.
+
+Other examples:
+
+  * Two very large particles managed by a single worker
+
+        runMain Particles P 1 -- 250@150,150 40@200,200
+
+  * Larger numbers of particles
+  
         runMain Particles s -9 P 40                # 80 particles, G = 6.79E-9
         runMain Particles S 4  P 40  w=1800 h=1000 # 320 particles, G = 6.79E-11 
 
 Things can get a bit hectic when gravitation is high and there are lots of
 particles; but you can moderate behaviour from the control panel of the
-viewer. When there are too many particles on a small screen they can become
-indistinguishable -- the screen just looks like a greenish blob. Some action can
-be generated by changing the densities of one or more particles (just click on
-the green a few times at random).
- 
-
-
-  
-Bernard Sufrin, Oxford, 2011 and 2017
+viewer. When there are too many particles on a small screen they can be
+indistinguishable at first -- the screen just looks like a greenish blob.
+THis is remedied by 
 
