@@ -5,17 +5,16 @@ import display._
 import io.threadcso._
 import app.OPT._
 
-/**
-  * A demonstration of pseudo-gravitational particle calculations done by
+/** A demonstration of pseudo-gravitational particle calculations done by
   * several workers in lock-step and coordinated by barriers. The demonstration
   * can also show the effects of confinement of gas particles in a closed
   * chamber whose walls add energy to particles that collide with them
   *
   *   1. the particles are in a closed container with energy absorbent walls
   *
-  *   2. there is an upper bound on the speed to which they can accelerate
+  * 2. there is an upper bound on the speed to which they can accelerate
   *
-  *   A description of particle computations is given in the lecture notes.
+  * A description of particle computations is given in the lecture notes.
   */
 object Particles extends App {
   var deltaT = 3.0 // Time quantum for simulation
@@ -121,9 +120,9 @@ object Particles extends App {
     *   current velocity
     */
   class Particle(
-      var R:            Double,
-      val position:     Position,
-      val velocity:     Velocity = new Velocity()
+      var R: Double,
+      val position: Position,
+      val velocity: Velocity = new Velocity()
   ) extends Displayable {
     override def toString: String = s"Particle($R, $position, $velocity)"
 
@@ -131,7 +130,7 @@ object Particles extends App {
     private[this] def vol = (4.0 / 3.0) * math.Pi * (R * R * R)
     private[this] var volume = vol
 
-    def setR(radius: Double): Unit = { R=radius; volume = vol }
+    def setR(radius: Double): Unit = { R = radius; volume = vol }
 
     /** Current mass of the particle */
     def mass = density * volume
@@ -210,9 +209,8 @@ object Particles extends App {
   /** Per-worker mapping from particles to force */
   var localForces: Array[Array[ForceVariable]] = _
 
-  /**
-   *  Worker `me` manages the particles in `mine`
-   */
+  /** Worker `me` manages the particles in `mine`
+    */
   def worker(me: Int, mine: Seq[Int]): PROC =
     proc(s"worker($me)") {
       // initialize
@@ -254,9 +252,8 @@ object Particles extends App {
   /** Whether the simulation is running or not */
   var running = false
 
-  /**
-   *  Process that reacts to mouse and keyboard events on the display
-   */
+  /** Process that reacts to mouse and keyboard events on the display
+    */
   val mouseManager = proc("mouseManager") {
     repeat {
       val e = fromDisplay ? {
@@ -266,22 +263,18 @@ object Particles extends App {
           if (!running && lastHits.length == 1)
             for (particle <- lastHits)
               println(s"R=${particle.R}, mass=${particle.mass}")
-          
+
           if (mouse.isShift && !running) {
             // We are selecting particles
             for (particle <- lastHits) particle.selected = !particle.selected
             display.draw()
-          }
-
-          else
-
-          { // remove selection (if selected) or change density
+          } else { // remove selection (if selected) or change density
             val factor = if (mouse.isControl) 0.5 else 2.0
             for (particle <- lastHits)
               if (particle.selected)
-                 particle.selected = false
+                particle.selected = false
               else
-                 particle.changeDensity(factor)
+                particle.changeDensity(factor)
             // regenerate the display if necessary
             if (!running) display.draw()
           }
@@ -293,16 +286,28 @@ object Particles extends App {
           // nudge selected particles with arrows
           // shrink selected particles with 1 (all particles if control)
           // grow selected particles with 2 (all particles if control)
-          if (!running) for (particle <- allParticles ) {
+          if (!running) for (particle <- allParticles) {
             import java.awt.event.KeyEvent.{VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT}
             key.code match {
-              case VK_LEFT  => if (particle.selected) particle.position.x = particle.position.x - 5
-              case VK_UP    => if (particle.selected) particle.position.y = particle.position.y - 5
-              case VK_RIGHT => if (particle.selected) particle.position.x = particle.position.x + 5
-              case VK_DOWN  => if (particle.selected) particle.position.y = particle.position.y + 5
-              case '1'      => if (key.isControl || particle.selected) particle.setR(particle.R * 2.0 / 3.0)
-              case '2'      => if (key.isControl || particle.selected) particle.setR(particle.R * 3.0 / 2.0)
-              case _        => 
+              case VK_LEFT =>
+                if (particle.selected)
+                  particle.position.x = particle.position.x - 5
+              case VK_UP =>
+                if (particle.selected)
+                  particle.position.y = particle.position.y - 5
+              case VK_RIGHT =>
+                if (particle.selected)
+                  particle.position.x = particle.position.x + 5
+              case VK_DOWN =>
+                if (particle.selected)
+                  particle.position.y = particle.position.y + 5
+              case '1' =>
+                if (key.isControl || particle.selected)
+                  particle.setR(particle.R * 2.0 / 3.0)
+              case '2' =>
+                if (key.isControl || particle.selected)
+                  particle.setR(particle.R * 3.0 / 2.0)
+              case _ =>
             }
           }
           display.draw()
@@ -312,29 +317,24 @@ object Particles extends App {
     }
   }
 
-  /**
-   *  Evaluate `body`, taking at least `t` nanoseconds. Sleep
-   *  if evaluation terminates early, and report the overrun
-   *  as a multiple of `t` otherwise. 
-   *
-   */
+  /** Evaluate `body`, taking at least `t` nanoseconds. Sleep if evaluation
+    * terminates early, and report the overrun as a multiple of `t` otherwise.
+    */
   def takeTime(t: Nanoseconds)(body: => Unit): Unit = {
     val deadline = nanoTime + t
     body
     val ahead = deadline - nanoTime
     if (ahead <= 0)
-       reportOverrun(-ahead.toDouble / t.toDouble)
+      reportOverrun(-ahead.toDouble / t.toDouble)
     else
-       sleep(ahead)
+      sleep(ahead)
   }
 
   def reportOverrun(behind: Double) = print(f"($behind%1.1f)")
 
-  /**
-   *  This process sets up the display and GUI,
-   *  then synchronises the display with the
-   *  workers.
-   */
+  /** This process sets up the display and GUI, then synchronises the display
+    * with the workers.
+    */
   val displayController = proc("Display") { // initialize
     import widgets._
 
@@ -373,7 +373,7 @@ object Particles extends App {
       running = state
       if (running) singleFrame.release()
     }
-    
+
     def controls = row(
       run,
       hGlue,
@@ -399,16 +399,16 @@ object Particles extends App {
       North = controls
     )
 
-    barrier.sync()      // wait for the workers' first syncs
+    barrier.sync() // wait for the workers' first syncs
 
     while (true) {
 
       // drawing the frame overlaps with local updates
-      display.draw()    
+      display.draw()
 
-      // wait here for next frame permission 
+      // wait here for next frame permission
       // so that the last draw is completed when `!running`
-      singleFrame.acquire()      
+      singleFrame.acquire()
 
       // recompute the new frame
       takeTime(seconds(1.0 / FPS)) {
@@ -416,23 +416,24 @@ object Particles extends App {
         barrier.sync() // global updates done
       }
 
-      // allow the next cycle to proceed 
+      // allow the next cycle to proceed
       if (running)
-         singleFrame.release()
+        singleFrame.release()
     }
   }
 
   def Main(): Unit = {
     if (debug) println(debugger)
-    N       = 2 * P * Seg
-    C       = Vector.Value(width / (CF * deltaT), height / (CF * deltaT), 0.0).magnitude
-    Corner  = Vector.Value(width, height)
+    N = 2 * P * Seg
+    C =
+      Vector.Value(width / (CF * deltaT), height / (CF * deltaT), 0.0).magnitude
+    Corner = Vector.Value(width, height)
     barrier = new Barrier(P + 1)
 
     allParticles = Array.ofDim[Particle](N)
-    localForces  = Array.ofDim[Position](P, N)
+    localForces = Array.ofDim[Position](P, N)
 
-    G            = scaledG()
+    G = scaledG()
 
     // Seed the world
     if (ps.isEmpty) {

@@ -63,10 +63,8 @@ class APITrialTests extends AnyFlatSpec {
 
   it should "run virtual threads" in {
     import java.lang.Thread
-    Thread.startVirtualThread(
-      () => {
-        System.out.println("Hello World");
-      }
-    );
+    Thread.startVirtualThread(() => {
+      System.out.println("Hello World");
+    });
   }
 }

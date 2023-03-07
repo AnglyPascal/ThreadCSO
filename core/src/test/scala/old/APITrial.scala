@@ -27,15 +27,14 @@ abstract class APITrial(implicit loc: SourceLocation) {
   // This forces the main cso program into a non-main thread
   // It's for no particular reason
   def main(args: Array[String]): Unit = {
-    val realArgs = args.filter {
-        case arg =>
-         if (arg.startsWith("-K")) {
-           val poolKind = arg.substring(2)
-           println(s"Pool kind: $poolKind") 
-           scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
-           false
-         } else
-           true
+    val realArgs = args.filter { case arg =>
+      if (arg.startsWith("-K")) {
+        val poolKind = arg.substring(2)
+        println(s"Pool kind: $poolKind")
+        scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
+        false
+      } else
+        true
     }
     run(proc("Runtime System") {} || proc("MAIN") { MAIN(realArgs.toArray) })
   }
@@ -128,13 +127,13 @@ object PARStack extends APITrial {
   * -a=N -- set stack size of source and nomult and sink threads
   * -b=N -- set stack size of (recursive) sieve threads
   * -p=N -- pause after N primes (to test the debugger)
-  * -q   -- quietly
+  * -q -- quietly
   *
   * Benchmarks from 2017
   * {{{
-  * Wed  4 Oct 2017 13:07:06 BS
-  * OS X (Sierra) 2.9ghz Intel Core I7 (8G DDR3 1600mhz) 17657 (2028th prime) 36secs
-         (cause: OS hard limit on kthreads)
+  *  Wed  4 Oct 2017 13:07:06 BS
+  *  OS X (Sierra) 2.9ghz Intel Core I7 (8G DDR3 1600mhz) 17657 (2028th prime) 36secs
+  * (cause: OS hard limit on kthreads)
   * }}}
   *
   * Some historical benchmarks:
@@ -144,7 +143,7 @@ object PARStack extends APITrial {
   * --------------------------------------------------------------------
   * Date: Tue Feb 28 18:12:59 GMT 2023 USING LOOM (lightweight threads) JDK20
   * OS X Monterey
-  * (12.6.3)        Intel Mac Mini (2018)       
+  * (12.6.3)        Intel Mac Mini (2018)
   *                 32gb 3.2Ghz 6-core i7       49999th is 611951
   *                                             50k primes in 126s -- 240s inc pipeline closedown
   *                                             9999th is 104723
@@ -194,9 +193,11 @@ object Primes extends APITrial {
       else if (arg.startsWith("-p="))
         pause = arg.substring(3).toInt
       else if (arg == "-d") println(debugger)
-      else if (arg == "-q") quiet=true
+      else if (arg == "-q") quiet = true
       else
-        Console.println(s"($arg) -max=... -for=... | -a=<N> | -b=<N> | -c | -d | -q | -p=<N>")
+        Console.println(
+          s"($arg) -max=... -for=... | -a=<N> | -b=<N> | -c | -d | -q | -p=<N>"
+        )
 
     val mid = io.threadcso.channel.OneOne[Int]("mid")
     val res = io.threadcso.channel.OneOne[Int]("res")
@@ -264,40 +265,40 @@ object Primes extends APITrial {
 }
 
 /** Tests downstream transmission and closing */
-object Chan1 extends APITrial {
-  def MAIN(args: Array[String]): Unit = {
-    val mid =
-      if (args contains ("-a")) OneOne[String]("mid")
-      else io.threadcso.channel.OneOne[String]("mid")
-    run(π { for (a <- args) mid ! a; mid.closeOut() }
-      || π { repeat { Console.println(mid ? ()) } })
-    System.exit(0)
-  }
-}
+// object Chan1 extends APITrial {
+//   def MAIN(args: Array[String]): Unit = {
+//     val mid =
+//       if (args contains ("-a")) OneOne[String]("mid")
+//       else io.threadcso.channel.OneOne[String]("mid")
+//     run(π { for (a <- args) mid ! a; mid.closeOut() }
+//       || π { repeat { Console.println(mid ? ()) } })
+//     System.exit(0)
+//   }
+// }
 
 /** Tests downstream transmission and closing and repeat/stop */
-object Chan2 extends APITrial {
-  def MAIN(args: Array[String]): Unit = {
-    val mid =
-      if (args contains ("-a")) OneOne[String]("mid")
-      else io.threadcso.channel.OneOne[String]("mid")
-    run(π {
-      repeat {
-        Console.print("> ")
-        val ln = readLine
-        if (ln == null || ln == "") stop
-        mid ! ln
-      }
-      mid.closeOut()
-    }
-      || π {
-        repeat {
-          Console.println(mid ? ())
-        }
-      })
-    System.exit(0)
-  }
-}
+// object Chan2 extends APITrial {
+//   def MAIN(args: Array[String]): Unit = {
+//     val mid =
+//       if (args contains ("-a")) OneOne[String]("mid")
+//       else io.threadcso.channel.OneOne[String]("mid")
+//     run(π {
+//       repeat {
+//         Console.print("> ")
+//         val ln = readLine
+//         if (ln == null || ln == "") stop
+//         mid ! ln
+//       }
+//       mid.closeOut()
+//     }
+//       || π {
+//         repeat {
+//           Console.println(mid ? ())
+//         }
+//       })
+//     System.exit(0)
+//   }
+// }
 
 /** Tests downstream transmission and closing, and upstream closing */
 //noinspection VarCouldBeVal
