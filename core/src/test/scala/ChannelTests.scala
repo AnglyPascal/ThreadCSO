@@ -14,7 +14,7 @@ abstract class ChannelTest(implicit loc: SourceLocation) {
   def test(args: Array[String]): Boolean
 }
 
-/** Check single communcation over OneOne channel works. This also tests
+/** Check single communication over OneOne channel works. This also tests
   * closeOut and\or closeIn
   */
 class Chan0 extends ChannelTest {
