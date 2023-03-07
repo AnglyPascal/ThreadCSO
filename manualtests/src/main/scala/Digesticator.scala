@@ -114,15 +114,15 @@ object Digesticator extends App {
     import scala.io.Source
     try {
       if (path.matches(".*//.*"))
-        Source.fromURL(path).mkString.split(splitPattern)
+        Source.fromURL(path).mkString.split(splitPattern).toIndexedSeq
       else
-        Source.fromFile(new File(path), bufferSize).mkString.split(splitPattern)
+        Source.fromFile(new File(path), bufferSize).mkString.split(splitPattern).toIndexedSeq
     } catch {
       case exn: java.io.FileNotFoundException =>
-        Console.err.println(s"File not found: $path"); Array[String]()
+        Console.err.println(s"File not found: $path"); Array[String]().toIndexedSeq
       case exn: java.net.ConnectException =>
-        Console.err.println(s"Connection refused: $path"); Array[String]()
-      case exn: Exception => Console.err.println(s"$exn"); Array[String]()
+        Console.err.println(s"Connection refused: $path"); Array[String]().toIndexedSeq
+      case exn: Exception => Console.err.println(s"$exn"); Array[String]().toIndexedSeq
     }
   }
 

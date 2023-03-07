@@ -1,6 +1,7 @@
 import io.threadcso._
 
-/** A little program showing how streams may be used to compare traversals of
+/**
+  * A little program showing how streams may be used to compare traversals of
   * trees without having to reify entire traversals.
   */
 
@@ -10,14 +11,18 @@ object SameLeavesTrial {
     * writing whether they differ to `ans`.
     */
   def sameStreams[T](inl: ??[T], inr: ??[T], ans: !![Boolean]) = proc {
-    var l, r = inl.nothing // last-read value
-    var ln, rn = 0 // number of values read
+    var l,  r  = inl.nothing // last-read value
+    var ln, rn = 0           // number of values read
+
     val nextPair: PROC =
       proc { l = inl ? (); ln = ln + 1 } ||
-        proc { r = inr ? (); rn = rn + 1 }
+      proc { r = inr ? (); rn = rn + 1 }
+
     var same = true
     repeat(same) { nextPair(); same = l == r }
+    
     ans ! (same && ln == rn)
+
     ans.closeOut();
     inl.closeIn();
     inr.closeIn()
@@ -41,11 +46,16 @@ object SameLeavesTrial {
   /** Test whether two trees have the same depth-first traversal */
   def sameLeaves[V](tl: Tree[V], tr: Tree[V]): Boolean = {
     val left, right = OneOne[V]
-    val answer = OneOneBuf[Boolean](1)
-    (proc { tl.depthFirst(left) }
+    val answer      = OneOneBuf[Boolean](1)
+
+    // Set up and start the network
+    (    proc { tl.depthFirst(left) }
       || proc { tr.depthFirst(right) }
-      || sameStreams(left, right, answer))() // Start the network
-    return answer ? () // Collect the answer
+      || sameStreams(left, right, answer)
+    ) ()
+
+    // Collect and return the answer
+    answer ? () 
   }
 
   /*

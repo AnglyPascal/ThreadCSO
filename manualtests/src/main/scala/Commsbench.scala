@@ -195,7 +195,7 @@ object Commsbench {
         } else if (arg startsWith "-n")
           for (i <- 0 until n)
             nullprocess(loops, arg substring 2 toInt)
-        else if (arg startsWith "-_x")
+        else if (arg startsWith "-x")
           n = (arg substring 2 toInt)
         else if (arg startsWith "-N")
           loops = (arg substring 2 toInt)
@@ -207,7 +207,11 @@ object Commsbench {
         } else if (arg startsWith "-P") {
           java.lang.System
             .setProperty("io.threadcso.pool.SECS", arg substring 2)
-        } else
+        } else if (arg startsWith "-K") {
+           val poolKind = arg.substring(2)
+           scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
+        }
+        else
           printf(prompt)
     if (debug) println("Connect to the debugger now if you wish") else exit()
   }

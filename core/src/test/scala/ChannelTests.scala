@@ -44,7 +44,8 @@ class Chan0 extends ChannelTest {
   }
 }
 
-/** Tests the invariant that messages sent through a OneOne channel arrives in
+/**
+  * Tests the invariant that messages sent through a OneOne channel arrives in
   * order.
   */
 class Chan1 extends ChannelTest {

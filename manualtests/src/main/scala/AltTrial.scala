@@ -62,6 +62,8 @@ abstract class AltTrial(implicit loc: SourceLocation) {
     * Starts the debugger in the prologue if the `-d` switch is given on the
     * command-line; and exits the program after running `MAIN(args:
     * Seq[String])` if the `-d` switch is not given on the command-line.
+    *
+    * Uses the default executor pool kind unless -Kpoolkind is given
     */
   def main(args: Array[String]): Unit = {
     var arguments: Seq[String] =
@@ -135,7 +137,7 @@ abstract class AltTrial(implicit loc: SourceLocation) {
 }
 
 /** Assembling quorums for course sessions. An example of a server providing the
-  * implementtion of an abstract machine.
+  * implementation of an abstract machine.
   *
   * This tickled a (timing) problem with closing a once-only result-channel as
   * it was being read.
@@ -301,12 +303,9 @@ object Alt0 extends AltTrial() {
   */
 object Alt0P extends AltTrial() {
   val a = OneOne[String]("a")
-  def MAIN(args: Seq[String]): Unit = {
-    (π { for (arg <- args) { a ! arg }; println("SENT"); a.closeOut() }
-      || π {
-        priserve(useDebugger, a =?=> { x => println(x) }); println("DONE")
-      })()
-  }
+  def MAIN(args: Seq[String]): Unit =  
+    run (  π { for (arg <- args) { a ! arg }; println("SENT"); a.closeOut() }
+        || π { priserve(useDebugger, a =?=> { x => println(x) }); println("DONE") })
 }
 
 /** <p>Copies arguments to the console via a `OneOneBuf(bufferSize)` and a
@@ -316,11 +315,10 @@ object Alt0P extends AltTrial() {
 object Alt0B extends AltTrial() {
   val a = mkBuf[String]("a")
   def MAIN(args: Seq[String]): Unit = {
-    (π { for (arg <- args) { a ! arg }; println("SENT"); a.closeOut() }
-      || π {
-        serve(useDebugger, a =?=> { x => println(x); microSleep(wr, wa) });
-        println("DONE")
-      })()
+    (  π { for (arg <- args) { a ! arg }; println("SENT"); a.closeOut() }
+    || π { serve(useDebugger, a =?=> { x => println(x); microSleep(wr, wa) });
+           println("DONE")}
+    )()
   }
 }
 
@@ -387,7 +385,7 @@ object Alt0N extends AltTrial {
   * serve loop to two channel (a, b), from which they are printed.
   *
   * {{{
-  * (    π ("a") { repeat { println(s"a ! \${a?()}"); microSleep(wr, wa)  } }
+  * (  π ("a") { repeat { println(s"a ! \${a?()}"); microSleep(wr, wa)  } }
   * || π ("b") { repeat { println(s"b ! \${b?()}"); microSleep(wr, wb)  } }
   * || π ("writer") { for (arg<-args) { c!arg; sleep(wp*microSec)} ; c.closeOut() }
   * || π ("server")
@@ -416,15 +414,15 @@ object Alt1 extends AltTrial {
   val a = OneOne[String]("a")
   val b = OneOne[String]("b")
   val c: Chan[String] = mkBuf[String]("c")
-  def MAIN(args: Seq[String]): Unit = {
-    (π("a") { repeat { a ? { x => println(s"a ! ${x}"); microSleep(wr, wa) } } }
-      || π("b") {
-        repeat { b ? { x => println(s"b ! ${x}"); microSleep(wr, wb) } }
-      }
-      || π("writer") {
-        for (arg <- args) { c ! arg; sleep(wp * microSec) }; c.closeOut()
-      }
-      || π("server") {
+  def MAIN(args: Seq[String]): Unit = 
+    (  π("a") { repeat { a ? { x => println(s"a ! ${x}"); microSleep(wr, wa) } } }
+    || π("b") {
+         repeat { b ? { x => println(s"b ! ${x}"); microSleep(wr, wb) } }
+       }
+    || π("writer") {
+           for (arg <- args) { c ! arg; sleep(wp * microSec) }; c.closeOut()
+       }
+    || π("server") {
         var arg = a.nothing
         var full = false
         withDebuggerFormat(s"SERVER full: $full ($arg)") {
@@ -439,8 +437,6 @@ object Alt1 extends AltTrial {
           b.closeOut()
         }
       })()
-  }
-
 }
 
 /** Same as Alt1 except that the serve loop is replaced by a repeated alt.

@@ -50,3 +50,17 @@ lazy val examples = (project in file("examples"))
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
   )
+
+lazy val manualtests = (project in file("manualtests"))
+  .dependsOn(core)
+  .dependsOn(app)
+  .settings(
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-unchecked"
+      /* "-Werror" */
+    ),
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+  )
