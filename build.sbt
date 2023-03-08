@@ -1,3 +1,8 @@
+//
+// to build all the jar files
+// ./cso -sbt clean test package
+//
+
 ThisBuild / organization := "ox"
 Global / resolvers += "scala-integration" at
   "https://scala-ci.typesafe.com/artifactory/scala-integration/"
@@ -6,8 +11,6 @@ ThisBuild / version := "0.1.1-SNAPSHOT"
 ThisBuild / fork := true
 ThisBuild / javaOptions ++= Seq("--enable-preview") // when running
 ThisBuild / javacOptions ++= Seq("--enable-preview", "--release", "14") // when compiling,
-
-/* ThisBuild / javaOptions ++= Seq("-Dio.threadcso.pool.KIND=ADAPTIVE") */
 
 lazy val scalaReflect = Def.setting {
   "org.scala-lang" % "scala-reflect" % scalaVersion.value
