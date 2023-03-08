@@ -115,7 +115,8 @@ class DEBUGGER(debugPort: Int = 0) {
 
     import io.threadcso.basis._
     import io.threadcso.debug.REGISTRY.Debuggable
-    val threads = CSOThreads.getActive
+
+    
     //  The mapping from waiting threads to the objects they are waiting in
     //  This is a relic of the time when we used jdk semaphores/locks, and needed to register debuggables
     //  components in order for stack backtraces to be intelligible.
@@ -124,12 +125,12 @@ class DEBUGGER(debugPort: Int = 0) {
     val waiting = io.threadcso.debug.REGISTRY.waiting
     val registered = io.threadcso.debug.REGISTRY.registered
 
-    // Print out the state of the running threads
-    for (thread <- threads) {
+    def printThread(thread: Thread): Unit = {
+      val V = if (thread.isVirtual) "V" else "K"
       waiting.get(thread) match {
         case Some(things) =>
           for (thing <- things) {
-            out.print(s"THREAD ${thread.identity} AWAITING: ")
+            out.print(s"${V}THREAD ${thread.identity} AWAITING: ")
             try { thing.showState(out) }
             catch {
               case t: Throwable =>
@@ -166,7 +167,7 @@ class DEBUGGER(debugPort: Int = 0) {
           }
           state match {
             case TIMED_WAITING =>
-              out.print(s"THREAD ${thread.identity} ${state.toString}")
+              out.print(s"${V}THREAD ${thread.identity} ${state.toString}")
               if (thread.getName.matches("^cso-pool.*"))
                 out.println(" (in thread pool)")
               else {
@@ -175,7 +176,7 @@ class DEBUGGER(debugPort: Int = 0) {
               }
 
             case _ =>
-              out.println(s"THREAD ${thread.identity} ${state.toString}")
+              out.println(s"${V}THREAD ${thread.identity} ${state.toString}")
               showBlocker()
               showStackTrace(thread, out)
           }
@@ -197,6 +198,11 @@ class DEBUGGER(debugPort: Int = 0) {
          }
       }
      */
+
+    // Print out the states of the running threads
+    CSOThreads.forActiveKThreads(printThread(_))
+    CSOThreads.forActiveVThreads(printThread(_))
+
 
     out.println()
     if (monitored.nonEmpty) {

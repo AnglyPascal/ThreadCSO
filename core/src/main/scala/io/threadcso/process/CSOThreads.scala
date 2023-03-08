@@ -37,18 +37,35 @@ object CSOThreads {
   private val mainThread = Thread.currentThread
 
   /** The thread group containing threads used to run CSO processes. */
-  private val csoThreads = new ThreadGroup("CSO")
+  private val csoThreads                    = new ThreadGroup("CSO")
 
-  /** PRE: size of CSO thread pools (or count of CSO threads) is not increasing
-    * POST: returns the active CSO threads
+  /**
+   *   The mapping of (live) vThread indexes to vThreads 
+   */
+  private var vThreads =
+          new scala.collection.concurrent.TrieMap[Long, Thread]
+
+  /**
+    * PRE: size of CSO platform thread pools (or count of CSO threads) is not increasing
+    * EFFECT: applies f to each active thread in the CSO pool.
     */
-  def getActive: collection.Seq[Thread] = {
+  def forActiveKThreads(f: Thread => Unit): Unit = {
     val count = 30 + csoThreads.activeCount // overestimate
     val threads = Array.ofDim[Thread](count)
     val actual = csoThreads.enumerate(threads)
     threads(actual) = mainThread
-    for (i <- 0 until actual + 1) yield threads(i)
+    for (i <- 0 until actual + 1) f(threads(i))
   }
+
+  /**
+    * PRE: size of CSO virtual thread pool is not increasing
+    * EFFECT: applies f to each active virtual thread.
+    */
+  def forActiveVThreads(f: Thread => Unit) = {
+    val it = vThreads.valuesIterator
+    while (it.hasNext) f(it.next())
+  }
+  
 
   /** Make a thread factory for CSO threads of the specified size */
   private def factory(stackSize: Long) = new ThreadFactory {
@@ -145,16 +162,74 @@ object CSOThreads {
   }
 
    /**
-    *  The varieties of CSOExecutor  
-    *
+    *   One of each standard kind of CSOExecutor
     */
 
-   lazy val SIZED:    CSOExecutor = makeExecutor("SIZED")
-   lazy val ADAPTIVE: CSOExecutor = makeExecutor("ADAPTIVE")
-   lazy val CACHED:   CSOExecutor = makeExecutor("CACHED")
-   lazy val UNPOOLED: CSOExecutor = makeExecutor("UNPOOLED")
-   lazy val VIRTUAL:  CSOExecutor = makeExecutor("VIRTUAL")
 
+   lazy val SIZED: CSOExecutor =
+            new SizePooledCSOExecutor(sizePooledCSOExecutor, poolREPORT)
+
+   lazy val ADAPTIVE: CSOExecutor =
+            sizePooledCSOExecutor(poolSTACKSIZE)
+
+   lazy val CACHED: CSOExecutor =
+        new PooledCSOExecutor(Executors.newCachedThreadPool(factory(poolSTACKSIZE)))
+        
+   lazy val UNPOOLED: CSOExecutor =
+        new CSOExecutor {
+            private val threadCount = new java.util.concurrent.atomic.AtomicLong
+            def execute(r: Runnable, stackSize: Long): Unit =
+              new Thread(
+                csoThreads,
+                r,
+                "cso-unpooled-%d".format(threadCount.getAndIncrement),
+                stackSize
+              ).start()
+
+            def shutdown(): Unit = {}
+        }
+
+   /**
+    *  This executor keeps track of the currently-running virtual threads, at a slight cost
+    *  in their startup and closedown times. 
+    */
+   lazy val VIRTUAL:  CSOExecutor = new CSOExecutor {
+            private val threadCount   = new java.util.concurrent.atomic.AtomicLong
+            private val threadBuilder = Thread
+                                          .ofVirtual()
+                                          .name("cso-virtual-%d".format(threadCount.getAndIncrement))
+            def execute(r: Runnable, stackSize: Long): Unit = {
+              val proxy = new Runnable {
+                def run(): Unit = {
+                  val current = Thread.currentThread
+                  val id      = current.threadId
+                  vThreads    += ((id, current))
+                  try {
+                    r.run()
+                  } catch {
+                    case thr: Throwable => vThreads.remove(id); throw thr
+                  }
+                }
+              }
+              threadBuilder.start(proxy)
+            }
+
+            def shutdown(): Unit = {}
+          }
+   /**
+    *  This executor doesn't keep track of the currently-running virtual threads. They start a mite faster
+    *  than VIRTUAL threads but the debugger doesn't get to see them
+    */
+   lazy val FASTVIRTUAL:  CSOExecutor = new CSOExecutor {
+            private val threadCount   = new java.util.concurrent.atomic.AtomicLong
+            private val threadBuilder = Thread
+                                          .ofVirtual()
+                                          .name("cso-virtual-%d".format(threadCount.getAndIncrement))
+            def execute(r: Runnable, stackSize: Long): Unit = threadBuilder.start(r)
+
+            def shutdown(): Unit = {}
+          }
+  
   /**
     * Setting a jdk property with `-Dio.threadcso.pool.KIND=`''kind'' determines what kind
     * of thread pooling to use by default:
@@ -163,9 +238,12 @@ object CSOThreads {
     *   - `SIZED` -- runs several ADAPTIVE pools: each with threads of a similar
     *     stack size. See [[SizePooledCSOExecutor]].
     *   - `CACHED` -- a pool that never retires idle threads.
-    *   - `UNPOOLED` -- makes a new thread every time a `PROC` is run. Stacksize
+    *   - `UNPOOLED` -- makes a new thread to start and run a `PROC`. Stacksize
     *     is as specified by the `PROC`.
-    *   - `VIRTUAL` -- makes new virtual threads for each `PROC`
+    *   - `VIRTUAL` -- makes a new virtual thread to start and run a `PROC`. Stacksize
+    *     is as specified by the `PROC`. 
+    *   - `FASTVIRTUAL` -- makes a new virtual thread to start and run a `PROC`. Stacksize
+    *     is as specified by the `PROC`. The thread is not visible to the debugger.
     *
     *   Default is VIRTUAL
     */
@@ -176,61 +254,17 @@ object CSOThreads {
   /**  The current default `CSOExecutor` used in this program.
     *  Its kind is determined by `poolKIND`.
     */
-   def executor(): CSOExecutor = {
-     getExecutor(poolKIND)
-   }
+   def executor(): CSOExecutor = getExecutor(poolKIND)
 
    def getExecutor(poolKind: String): CSOExecutor =
    poolKind.toUpperCase match {
-      case "SIZED"      => SIZED
-      case "ADAPTIVE"   => ADAPTIVE
-      case "CACHED"     => CACHED
-      case "UNPOOLED"   => UNPOOLED
-      case "VIRTUAL"    => VIRTUAL
+      case "SIZED"        => SIZED
+      case "ADAPTIVE"     => ADAPTIVE
+      case "CACHED"       => CACHED
+      case "UNPOOLED"     => UNPOOLED
+      case "VIRTUAL"      => VIRTUAL
+      case "FASTVIRTUAL"  => FASTVIRTUAL
    }
-
-   private def makeExecutor(poolKind: String): CSOExecutor =
-    poolKIND.toUpperCase match {
-      case "SIZED" =>
-        new SizePooledCSOExecutor(sizePooledCSOExecutor, poolREPORT)
-
-      case "ADAPTIVE" =>
-        sizePooledCSOExecutor(poolSTACKSIZE)
-
-      case "CACHED" =>
-        new PooledCSOExecutor(
-          Executors.newCachedThreadPool(factory(poolSTACKSIZE))
-        )
-
-      case "UNPOOLED" =>
-        new CSOExecutor {
-          private val threadCount = new java.util.concurrent.atomic.AtomicLong
-          def execute(r: Runnable, stackSize: Long): Unit =
-            new Thread(
-              csoThreads,
-              r,
-              "cso-unpooled-%d".format(threadCount.getAndIncrement),
-              stackSize
-            ).start()
-          def shutdown(): Unit = {}
-        }
-
-      case "VIRTUAL" =>
-        new CSOExecutor {
-          private val threadCount = new java.util.concurrent.atomic.AtomicLong
-          def execute(r: Runnable, stackSize: Long): Unit =
-            Thread
-              .ofVirtual()
-              .name("cso-virtual-%d".format(threadCount.getAndIncrement))
-              .start(r)
-          def shutdown(): Unit = {}
-        }
-
-      case _ =>
-        throw new IllegalArgumentException(
-          s"io.threadcso.pool.KIND ($poolKIND) should be SIZED, ADAPTIVE, CACHED, VIRTUAL, or UNPOOLED"
-        )
-    }
 
     /**
      *  Shut all executors down. 
@@ -238,7 +272,8 @@ object CSOThreads {
      *        It's only used to debrief the pooled executors.
      */
     def shutDown(): Unit =
-    { for { ex <- List(SIZED,ADAPTIVE,CACHED,UNPOOLED,VIRTUAL) } ex.shutdown()
+    {
+       for { ex <- List(SIZED,ADAPTIVE,CACHED,UNPOOLED,VIRTUAL) } ex.shutdown()
     }
 
 }

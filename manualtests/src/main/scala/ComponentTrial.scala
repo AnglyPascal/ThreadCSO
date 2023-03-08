@@ -21,6 +21,7 @@ import scala.language.postfixOps
   * -N «n» set N (1000)
   * -tr «bits» set trace level to «bits» (default 0)
   * -log «n» set trace-log length to  (default 300)
+  * -K «poolKind» set thread pool 
   * }}}
   */
 // noinspection UnitMethodIsParameterless, UnitMethodIsParameterless, VarCouldBeVal, 
@@ -51,6 +52,7 @@ abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
   var poolwait = 0
   var trace = 0
   var logsize = 300
+  var poolKind = "VIRTUAL"
 
   // noinspection NameBooleanParameters
   val Options = List(
@@ -77,6 +79,7 @@ abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
     OPT("-W", poolwait, s"«n» set pool wait time (seconds) to «n»"),
     OPT("-tr", trace, s"«bits» set trace level to «bits» ($trace)"),
     OPT("-log", logsize, s"«n» set log radius ($logsize) to «n»"),
+    OPT("-K", poolKind, s"set thread pool kind: ($poolKind) to on e of VIRTUAL UNPOOLED ADAPTIVE etc"),
     ELSE("<...>", (l => args.enqueue(l)), s"add this to the list of arguments")
   )
 
@@ -97,6 +100,9 @@ abstract class ComponentTrial(doc: String)(implicit loc: SourceLocation)
       println(s"Runnable $loc")
       println(debugger)
     }
+
+    scala.util.Properties.setProp("io.threadcso.pool.KIND", poolKind)
+    
     if (poolwait > 0)
       java.lang.System.setProperty("io.threadcso.pool.SECS", poolwait.toString)
     val beginTime = nanoTime
