@@ -16,10 +16,17 @@ import io.threadcso.process._
   * See also the definition of [[io.threadcso.debugger]] for an account of how
   * this is usually done automatically (with a randomly-allocated free port
   * number). This is essentially by mentioning the lazy variable
-  * io.threadcso.debugger`. For example, the following code prints an
-  * announcement that the debugger is running {{{ import io.threadcso._ ... if
-  * (debugging) println(debugger) }}} in the form:
-  * `Debugger(http://localhost:64601)`
+  * `io.threadcso.debugger`. For example, the following code prints an
+  * announcement that the debugger is running
+  *
+  * {{{
+  * import io.threadcso._
+  * ...
+  * if (debugging)
+  *   println(debugger)
+  * }}}
+  *
+  * in the form: `Debugger(http://localhost:64601)`
   * -- which a browser can easily be pointed at.
   */
 class DEBUGGER(debugPort: Int = 0) {
@@ -116,7 +123,6 @@ class DEBUGGER(debugPort: Int = 0) {
     import io.threadcso.basis._
     import io.threadcso.debug.REGISTRY.Debuggable
 
-    
     //  The mapping from waiting threads to the objects they are waiting in
     //  This is a relic of the time when we used jdk semaphores/locks, and needed to register debuggables
     //  components in order for stack backtraces to be intelligible.
@@ -202,7 +208,6 @@ class DEBUGGER(debugPort: Int = 0) {
     // Print out the states of the running threads
     CSOThreads.forActiveKThreads(printThread(_))
     CSOThreads.forActiveVThreads(printThread(_))
-
 
     out.println()
     if (monitored.nonEmpty) {

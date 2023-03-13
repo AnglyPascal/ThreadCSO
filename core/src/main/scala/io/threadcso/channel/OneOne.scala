@@ -95,8 +95,7 @@ class OneOne[T](name_ : String) extends SyncChan[T] {
   }
 
   override def toString: String =
-    s"""${this.name}: ${if (closed.get) "(CLOSED)"
-      else ""} $currentState"""
+    s"""${this.name}: ${if (closed.get) "(CLOSED)" else ""} $currentState"""
 
   /** Show (an approximation to) the current state on `out` */
   override def showState(out: java.io.PrintWriter) = {
@@ -176,18 +175,17 @@ class OneOne[T](name_ : String) extends SyncChan[T] {
   }
 
   def close(): Unit = {
-    if (!closed.getAndSet(true)) // closing is idempotent
-      {
-        outPortEvent(CLOSEDSTATE) // Announce state change
-        inPortEvent(CLOSEDSTATE) // Announce state change
-        LockSupport.unpark(
-          reader.getAndSet(null)
-        ) // Force a waiting reader to continue **
-        LockSupport.unpark(
-          writer.getAndSet(null)
-        ) // Force a waiting writer to continue ***
-        this.unregister() // Debugger no longer interested
-      }
+    if (!closed.getAndSet(true)) { // closing is idempotent
+      outPortEvent(CLOSEDSTATE) // Announce state change
+      inPortEvent(CLOSEDSTATE) // Announce state change
+      LockSupport.unpark(
+        reader.getAndSet(null)
+      ) // Force a waiting reader to continue **
+      LockSupport.unpark(
+        writer.getAndSet(null)
+      ) // Force a waiting writer to continue ***
+      this.unregister() // Debugger no longer interested
+    }
 
   }
 
@@ -277,12 +275,9 @@ class OneOne[T](name_ : String) extends SyncChan[T] {
 
 }
 
-/*
-
-1.2R5 -> 1.2R6: very-low-incidence deadlock between writes and reads
-observed and diagnosed using csp/FDR by Gavin Lowe
-
-Gavin's suggested solution (writer.getAndSet(null) -> writer.get)
-to both read routines seems to solve the problem.
-
- */
+/** 1.2R5 -> 1.2R6: very-low-incidence deadlock between writes and reads
+  * observed and diagnosed using csp/FDR by Gavin Lowe
+  *
+  * Gavin's suggested solution (writer.getAndSet(null) -> writer.get) to both
+  * read routines seems to solve the problem.
+  */

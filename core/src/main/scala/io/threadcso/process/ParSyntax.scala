@@ -23,10 +23,10 @@ package io.threadcso.process
   * importantly, it is consistent with the way in which a prefix `||` constructs
   * its `Par`.
   */
-class ParSyntax(_procs: List[PROC]) extends PROC {
+class ParSyntax(private val procs: List[PROC]) extends PROC {
   private lazy val revprocs = procs.reverse
   private lazy val compiled = new Process.Par(name)(revprocs)
-  private val procs = _procs
+  // private val procs = _procs // not needed 
 
   /** Run the component processes; each in its own thread (the first process
     * runs in the current thread. Terminate when all processes have terminated:
@@ -52,9 +52,9 @@ class ParSyntax(_procs: List[PROC]) extends PROC {
   override def name: String = revprocs.map(_.name) mkString "||"
 
   /** Construct the parallel composition of `this` and `other` */
-  def ||(other: ParSyntax): PROC = new ParSyntax(other.procs ++ _procs)
+  def ||(other: ParSyntax): PROC = new ParSyntax(other.procs ++ procs)
 
   /** Construct the parallel composition of `this` and `other` */
-  override def ||(other: PROC): PROC = new ParSyntax(other :: _procs)
+  override def ||(other: PROC): PROC = new ParSyntax(other :: procs)
 
 }

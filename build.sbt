@@ -5,7 +5,11 @@ ThisBuild / scalaVersion := "2.13.11-bin-114c1da"
 ThisBuild / version := "0.1.1-SNAPSHOT"
 ThisBuild / fork := true
 ThisBuild / javaOptions ++= Seq("--enable-preview") // when running
-ThisBuild / javacOptions ++= Seq("--enable-preview", "--release", "14") // when compiling,
+ThisBuild / javacOptions ++= Seq(
+  "--enable-preview",
+  "--release",
+  "14"
+) // when compiling,
 
 /* ThisBuild / javaOptions ++= Seq("-Dio.threadcso.pool.KIND=ADAPTIVE") */
 
@@ -13,18 +17,26 @@ lazy val scalaReflect = Def.setting {
   "org.scala-lang" % "scala-reflect" % scalaVersion.value
 }
 
+lazy val commonDependencies = Seq(
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+)
+
+lazy val commonOptions = Seq(
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-unchecked"
+    /* "-Werror" */
+  )
+)
+
 lazy val core = (project in file("core"))
   .dependsOn(macroSub)
   .dependsOn(app % "test")
   .settings(
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-unchecked"
-      /* "-Werror" */
-    ),
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+    commonOptions,
+    commonDependencies
   )
 
 lazy val macroSub = (project in file("macros"))
@@ -36,31 +48,19 @@ lazy val app = (project in file("app"))
   .settings(
     libraryDependencies += scalaReflect.value
   )
-  
+
 lazy val examples = (project in file("examples"))
   .dependsOn(core)
   .dependsOn(app)
   .settings(
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-unchecked"
-      /* "-Werror" */
-    ),
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+    commonOptions,
+    commonDependencies
   )
 
 lazy val manualtests = (project in file("manualtests"))
   .dependsOn(core)
   .dependsOn(app)
   .settings(
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-unchecked"
-      /* "-Werror" */
-    ),
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.15",
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+    commonOptions,
+    commonDependencies
   )

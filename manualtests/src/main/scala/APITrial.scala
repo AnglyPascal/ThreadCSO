@@ -175,6 +175,7 @@ object Primes extends APITrial {
   var bSize = 0L
 
   def MAIN(args: Array[String]): Unit = {
+    scala.util.Properties.setProp("io.threadcso.pool.KIND", "FASTVIRTUAL")
     var max = 0
     var count = 0
     var pause = 0
@@ -210,7 +211,7 @@ object Primes extends APITrial {
             var prime = 0
             repeat {
               prime = res ? ()
-              if (!quiet) System.out.println("%04d %5d".format(i, prime))
+              // if (!quiet) System.out.println("%04d %5d".format(i, prime))
               i = i + 1
               if (i == count) stop
               if (pause != 0 && i > pause) {
@@ -237,29 +238,29 @@ object Primes extends APITrial {
         val m = in ? ()
         if (m % n != 0) out ! m
       }
-      if (showClose) Console.println("nomult " + n.toString + " closing")
+      if (showClose) Console.println(s"nomult $n closing")
       in.closeIn()
       out.closeOut()
-      if (showClose) Console.println("nomult " + n.toString + " closed")
+      if (showClose) Console.println(s"nomult $n closed")
     }.withStackSize(aSize)
 
   def sieve(name: String)(in: channel.??[Int], out: channel.!![Int]): PROC =
     proc(name) {
       val n = in ? ()
-      val mid = io.threadcso.channel.OneOne[Int]("Mid-%d".format(n))
+      val mid = io.threadcso.channel.OneOne[Int](s"Mid-$n")
       attempt {
         out ! n
         (noMult(n, in, mid) || sieve(s"seive-$n")(mid, out))()
         if (showClose)
-          Console.println("(nomult(%d}||sieve ...)() finished".format(n))
+          Console.println(s"(nomult($n}||sieve ...)() finished")
         in.closeIn()
         mid.close()
         out.closeOut()
       } { // Here if the output port is closed
-        if (showClose) Console.println("sieve " + n + " closing")
+        if (showClose) Console.println(s"sieve $n closing")
         mid.close()
         in.closeIn()
-        if (showClose) Console.println("sieve " + n + " closed")
+        if (showClose) Console.println(s"sieve $n closing")
       }
     }.withStackSize(bSize)
 }
